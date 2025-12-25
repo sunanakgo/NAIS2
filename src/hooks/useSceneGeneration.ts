@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from '@/components/ui/use-toast'
 import { useSceneStore } from '@/stores/scene-store'
@@ -13,6 +13,9 @@ import { pictureDir, join } from '@tauri-apps/api/path'
 import { processWildcards } from '@/lib/wildcard-processor'
 
 import { useCharacterStore } from '@/stores/character-store'
+
+// Module-level variable to prevent concurrent processing across all hook instances
+let isProcessing = false
 
 export function useSceneGeneration() {
     const { t } = useTranslation()
@@ -37,15 +40,14 @@ export function useSceneGeneration() {
         totalQueuedCount
     } = useSceneStore()
 
-    // Ref to prevent concurrent processing
-    const isProcessingRef = useRef(false)
-
     useEffect(() => {
         const processQueue = async () => {
             // CRITICAL: Prevent concurrent API requests (429 error fix)
-            if (isProcessingRef.current) {
+            // Check and SET immediately to prevent race condition
+            if (isProcessing) {
                 return
             }
+            isProcessing = true
 
             if (!isGenerating) {
                 // If scene generation stopped, ensure global mode is cleared if it was 'scene'
@@ -89,8 +91,7 @@ export function useSceneGeneration() {
                 return
             }
 
-            // Mark as processing - prevents concurrent requests
-            isProcessingRef.current = true
+            // Note: isProcessing is already set at the start of processQueue
 
             // Start Streaming State for this scene
             setStreamingData(scene.id, null, 0)
@@ -194,12 +195,9 @@ export function useSceneGeneration() {
                     result = await generateImage(token, params)
                 }
 
-                // Check if generation was stopped mid-way
-                if (!useSceneStore.getState().isGenerating) {
-                    setStreamingData(null, null, 0)
-                    isProcessingRef.current = false
-                    return
-                }
+                // NOTE: Removed isGenerating check here - it causes a race condition.
+                // When queueCount changes to 0, useEffect re-runs and sets isGenerating=false
+                // before the current generation finishes saving.
 
                 if (result.success && result.imageData) {
                     // Sanitize scene name for folder name
@@ -283,7 +281,7 @@ export function useSceneGeneration() {
                 setStreamingData(null, null, 0)
 
                 // CRITICAL: Release processing lock BEFORE checking for next item
-                isProcessingRef.current = false
+                isProcessing = false
 
                 // Small delay to prevent rapid consecutive API calls (extra safety)
                 await new Promise(resolve => setTimeout(resolve, 100))
@@ -295,7 +293,7 @@ export function useSceneGeneration() {
 
             } catch (e) {
                 console.error('Process queue error:', e)
-                isProcessingRef.current = false
+                isProcessing = false
                 setStreamingData(null, null, 0)
 
                 // Check if it's a 429 error and retry after delay
@@ -313,7 +311,7 @@ export function useSceneGeneration() {
             }
         }
 
-        if (isGenerating && !isProcessingRef.current) {
+        if (isGenerating && !isProcessing) {
             // Initialize progress tracking when generation starts
             if (completedCount === 0 && totalQueuedCount === 0) {
                 initGenerationProgress()
@@ -322,10 +320,10 @@ export function useSceneGeneration() {
         }
     }, [isGenerating, activePresetId, token, generationStore, characterPromptStore, savePath, t, addImageToScene, decrementFirstQueuedScene, setIsGenerating, streamingView, setStreamingData, initGenerationProgress, setGenerationProgress, completedCount, totalQueuedCount])
 
-    // Reset processing ref when generation stops
+    // Reset processing when generation stops
     useEffect(() => {
         if (!isGenerating) {
-            isProcessingRef.current = false
+            isProcessing = false
         }
     }, [isGenerating])
 

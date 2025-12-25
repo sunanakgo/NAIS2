@@ -31,9 +31,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 export default function SceneDetail() {
     const { id: sceneId } = useParams()
     const { t } = useTranslation()
+    const activePresetId = useSceneStore(state => state.activePresetId)
+
+    // Use reactive selector for scene - this ensures component re-renders when scene.images changes
+    const scene = useSceneStore(state => {
+        const preset = state.presets.find(p => p.id === state.activePresetId)
+        return preset?.scenes.find(s => s.id === sceneId)
+    })
+
     const {
-        activePresetId,
-        getScene,
         renameScene,
         toggleFavorite,
         deleteImage,
@@ -44,8 +50,6 @@ export default function SceneDetail() {
     } = useSceneStore()
     const { isGenerating: _isGlobalGenerating } = useSceneGeneration()
     const { promptFontSize } = useSettingsStore()
-
-    const scene = activePresetId && sceneId ? getScene(activePresetId, sceneId) : undefined
 
     // --- Resolution Logic ---
     const currentWidth = scene?.width || 832
@@ -142,7 +146,13 @@ export default function SceneDetail() {
 
     const handleGenerate = () => {
         if (!activePresetId || !scene) return
-        incrementQueue(activePresetId, scene.id)
+
+        // If queue count is 0, set it to 1 for single generation
+        // Otherwise, use the existing queue count without incrementing
+        if (scene.queueCount === 0) {
+            incrementQueue(activePresetId, scene.id)
+        }
+
         useSceneStore.getState().setIsGenerating(true)
     }
 
@@ -152,20 +162,34 @@ export default function SceneDetail() {
 
             // Sanitize scene name for folder name - MUST match useSceneGeneration.ts logic
             const safeSceneName = scene.name.replace(/[<>:"/\\|?*]/g, '_').trim() || 'Untitled_Scene'
-            const picDir = await pictureDir()
 
-            // Construct the path: Pictures/NAIS_Scene/<SceneName>
-            const folderPath = await join(picDir, 'NAIS_Scene', safeSceneName)
+            const { savePath, useAbsolutePath } = useSettingsStore.getState()
+            let folderPath: string
 
-            // Check if directory exists
-            const dirExists = await exists(folderPath)
-            if (!dirExists) {
-                // If specific scene folder doesn't exist, try parent folder
-                const parentPath = await join(picDir, 'NAIS_Scene')
-                if (await exists(parentPath)) {
-                    await Command.create('explorer', [parentPath]).execute()
+            if (useAbsolutePath && savePath) {
+                // Absolute path: savePath/NAIS_Scene/<SceneName>
+                folderPath = await join(savePath, 'NAIS_Scene', safeSceneName)
+
+                if (!(await exists(folderPath))) {
+                    // Try parent folder
+                    const parentPath = await join(savePath, 'NAIS_Scene')
+                    if (await exists(parentPath)) {
+                        await Command.create('explorer', [parentPath]).execute()
+                    }
+                    return
                 }
-                return
+            } else {
+                // Relative path: Pictures/NAIS_Scene/<SceneName>
+                const picDir = await pictureDir()
+                folderPath = await join(picDir, 'NAIS_Scene', safeSceneName)
+
+                if (!(await exists(folderPath))) {
+                    const parentPath = await join(picDir, 'NAIS_Scene')
+                    if (await exists(parentPath)) {
+                        await Command.create('explorer', [parentPath]).execute()
+                    }
+                    return
+                }
             }
 
             // Open folder in explorer

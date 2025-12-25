@@ -402,7 +402,13 @@ export default function Settings() {
                                             <FolderOpen className="h-4 w-4 mr-2" />
                                             {t('settingsPage.save.browse', 'Browse')}
                                         </Button>
-                                        <Button onClick={handleSavePath}>
+                                        <Button
+                                            onClick={handleSavePath}
+                                            variant={(localSavePath !== savePath || isAbsolutePath !== useAbsolutePath) ? "default" : "outline"}
+                                            className={(localSavePath !== savePath || isAbsolutePath !== useAbsolutePath)
+                                                ? "animate-pulse bg-primary hover:bg-primary/90 text-primary-foreground"
+                                                : ""}
+                                        >
                                             <Save className="h-4 w-4 mr-2" />
                                             {t('settingsPage.saveBtn')}
                                         </Button>
