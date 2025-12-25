@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ko" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/NAIS.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NAIS2</title>
+  <meta name="description" content="NovelAI 이미지 생성을 위한 강력하고 직관적인 데스크톱 애플리케이션" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: *; connect-src * 'unsafe-inline' 'unsafe-eval' data: blob:; style-src 'self' 'unsafe-inline' *; font-src 'self' *; img-src 'self' data: blob: *;">
+  <!-- Pretendard Font (Korean + Latin) -->
+  <link rel="stylesheet" as="style" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <!-- Inter Font (English fallback) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Splash Screen Styles -->
+  <style>
+    #splash-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f0f14 0%, #1a1a24 50%, #0f0f14 100%);
+      transition: opacity 0.5s ease-out;
+    }
+
+    #splash-screen.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .splash-logo-container {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .splash-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      animation: logo-pulse 2s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.4));
+    }
+
+    .splash-ring {
+      position: absolute;
+      inset: 0;
+      border: 3px solid transparent;
+      border-top-color: #8b5cf6;
+      border-radius: 50%;
+      animation: spin 1.2s linear infinite;
+    }
+
+    .splash-ring::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border: 2px solid transparent;
+      border-top-color: #a78bfa;
+      border-radius: 50%;
+      animation: spin 1.5s linear infinite reverse;
+    }
+
+    .splash-text {
+      margin-top: 32px;
+      font-family: 'Pretendard Variable', 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 0.05em;
+    }
+
+    .splash-dots::after {
+      content: '';
+      animation: dots 1.4s steps(4, end) infinite;
+    }
+
+    .splash-subtitle {
+      margin-top: 8px;
+      font-family: 'Pretendard Variable', 'Inter', sans-serif;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.35);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    @keyframes logo-pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.4));
+      }
+
+      50% {
+        transform: scale(1.05);
+        filter: drop-shadow(0 0 30px rgba(139, 92, 246, 0.6));
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes dots {
+      0% {
+        content: '';
+      }
+
+      25% {
+        content: '.';
+      }
+
+      50% {
+        content: '..';
+      }
+
+      75% {
+        content: '...';
+      }
+
+      100% {
+        content: '';
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Splash Screen -->
+  <div id="splash-screen">
+    <div class="splash-logo-container">
+      <img src="/NAIS_nobg.png" alt="NAIS" class="splash-logo" />
+      <div class="splash-ring"></div>
+    </div>
+    <div class="splash-text">Loading<span class="splash-dots"></span></div>
+    <div class="splash-subtitle">NovelAI Image Studio</div>
+  </div>
+
+  <!-- React Root -->
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

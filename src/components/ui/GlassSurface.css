@@ -1,0 +1,33 @@
+.glass-surface {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.glass-surface--svg {
+    --glass-frost: 0;
+    --glass-saturation: 1;
+    --filter-id: none;
+    backdrop-filter: blur(var(--glass-frost)) saturate(var(--glass-saturation)) var(--filter-id);
+}
+
+.glass-surface--fallback {
+    --glass-fallback-color: rgba(255, 255, 255, 0.1);
+    background: var(--glass-fallback-color);
+    backdrop-filter: blur(10px);
+}
+
+.glass-surface__filter {
+    position: absolute;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.glass-surface__content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+}

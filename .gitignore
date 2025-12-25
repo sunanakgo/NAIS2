@@ -1,0 +1,28 @@
+# Node
+node_modules
+dist
+dist-isolation
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Mac
+.DS_Store
+
+# Tauri
+src-tauri/target
+src-tauri/gen/android/
+src-tauri/gen/schemas/
+
+# Tagger Server Build Artifacts
+src-tauri/python/build/
+src-tauri/binaries/tagger-server*
+src-tauri/binaries/*.pkg
+src-tauri/binaries/tagger-server-x86_64-pc-windows-msvc.exe
+
+# Agent
+.agent/
+
+# Misc
+arcalive-intro.html

@@ -1,0 +1,53 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "NAIS2",
+  "version": "2.0.0",
+  "identifier": "com.sunakgo.nais2",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "NAIS2 - NovelAI Image Studio",
+        "width": 1600,
+        "height": 900,
+        "resizable": true,
+        "fullscreen": false,
+        "dragDropEnabled": false,
+        "decorations": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' https: data: blob: asset:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' https: wss: http://ipc.localhost http://127.0.0.1:* data:; frame-src https://* http://localhost:* data:;"
+    }
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "externalBin": [
+      "binaries/tagger-server"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "perMachine"
+      }
+    }
+  }
+}

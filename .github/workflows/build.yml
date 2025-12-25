@@ -1,0 +1,91 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'macos-latest'
+            args: '--target aarch64-apple-darwin'
+            target: 'aarch64-apple-darwin'
+            tagger_target: 'aarch64-apple-darwin'
+          - platform: 'macos-latest'
+            args: '--target x86_64-apple-darwin'
+            target: 'x86_64-apple-darwin'
+            tagger_target: 'x86_64-apple-darwin'
+          - platform: 'windows-latest'
+            args: ''
+            target: ''
+            tagger_target: 'x86_64-pc-windows-msvc'
+
+    runs-on: ${{ matrix.platform }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install pyinstaller fastapi uvicorn pillow numpy onnxruntime pandas huggingface_hub rembg tqdm python-multipart
+
+      - name: Build Tagger Server (Windows)
+        if: matrix.platform == 'windows-latest'
+        working-directory: src-tauri/python
+        run: |
+          pyinstaller tagger_server.spec --clean --noconfirm
+          mkdir -p ../binaries
+          mv dist/tagger-server-x86_64-pc-windows-msvc.exe ../binaries/
+
+      - name: Build Tagger Server (macOS)
+        if: matrix.platform == 'macos-latest'
+        working-directory: src-tauri/python
+        run: |
+          pyinstaller --onefile --name "tagger-server-${{ matrix.tagger_target }}" tagger_server.py --clean --noconfirm
+          mkdir -p ../binaries
+          mv "dist/tagger-server-${{ matrix.tagger_target }}" ../binaries/
+          chmod +x "../binaries/tagger-server-${{ matrix.tagger_target }}"
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'NAIS2 ${{ github.ref_name }}'
+          releaseBody: 'See the assets to download and install this version.'
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
