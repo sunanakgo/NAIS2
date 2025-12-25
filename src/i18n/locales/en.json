@@ -397,6 +397,11 @@
             "description": "Configure where generated images are saved.",
             "folder": "Save Folder",
             "folderHelp": "Enter the subfolder name within Pictures folder.",
+            "browse": "Browse",
+            "selectFolder": "Select Save Folder",
+            "absolutePathHelp": "Images will be saved to this exact folder.",
+            "resetDefault": "Reset to Default",
+            "customPath": "Custom Path",
             "autoSave": "Auto Save",
             "autoSaveHelp": "Automatically save images when generated."
         },

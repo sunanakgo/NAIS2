@@ -425,6 +425,11 @@
             "description": "생성된 이미지의 저장 위치를 설정하세요.",
             "folder": "저장 폴더",
             "folderHelp": "사진 폴더 내 서브폴더 이름을 입력하세요.",
+            "browse": "찾아보기",
+            "selectFolder": "저장 폴더 선택",
+            "absolutePathHelp": "이미지가 해당 폴더에 직접 저장됩니다.",
+            "resetDefault": "기본값 복원",
+            "customPath": "사용자 경로",
             "autoSave": "자동 저장",
             "autoSaveHelp": "이미지 생성 시 자동으로 저장합니다."
         },

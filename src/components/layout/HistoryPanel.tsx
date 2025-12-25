@@ -137,7 +137,7 @@ const HistoryImageItem = memo(function HistoryImageItem({
 export function HistoryPanel() {
     const { t } = useTranslation()
     const { setPreviewImage, isGenerating, setIsGenerating } = useGenerationStore()
-    const { savePath } = useSettingsStore()
+    const { savePath, useAbsolutePath } = useSettingsStore()
     const [savedImages, setSavedImages] = useState<SavedImage[]>([])
     const [imageThumbnails, setImageThumbnails] = useState<Record<string, string>>({})
     const [isLoading, setIsLoading] = useState(false)
@@ -202,59 +202,129 @@ export function HistoryPanel() {
     const loadSavedImages = async () => {
         setIsLoading(true)
         try {
-            const picturePath = await pictureDir()
             const images: SavedImage[] = []
+            const picturePath = await pictureDir()
 
-            // 1. Load Main Output Images
-            const outputDir = savePath || 'NAIS_Output'
-            if (await exists(outputDir, { baseDir: BaseDirectory.Picture })) {
-                const entries = await readDir(outputDir, { baseDir: BaseDirectory.Picture })
+            // 1. Load Main Output Images - Always load from Pictures/NAIS_Output first
+            const defaultOutputDir = 'NAIS_Output'
 
-                for (const entry of entries) {
-                    if (entry.name && (entry.name.toLowerCase().endsWith('.png') || entry.name.toLowerCase().endsWith('.jpg') || entry.name.toLowerCase().endsWith('.webp'))) {
-                        const fullPath = await join(picturePath, outputDir, entry.name)
-                        const match = entry.name.match(/_(\d+)\.[^.]+$/)
-                        const timestamp = match ? parseInt(match[1]) : 0
-                        images.push({
-                            name: entry.name,
-                            path: fullPath,
-                            timestamp,
-                            type: getGenerationType(entry.name)
-                        })
-                    }
-                }
-            }
+            // Always load from Pictures/NAIS_Output for backward compatibility
+            try {
+                if (await exists(defaultOutputDir, { baseDir: BaseDirectory.Picture })) {
+                    const entries = await readDir(defaultOutputDir, { baseDir: BaseDirectory.Picture })
 
-            // 2. Load Scene Images (Recursive)
-            const sceneBaseDir = 'NAIS_Scene'
-            if (await exists(sceneBaseDir, { baseDir: BaseDirectory.Picture })) {
-                const sceneDirs = await readDir(sceneBaseDir, { baseDir: BaseDirectory.Picture })
-
-                for (const sceneDir of sceneDirs) {
-                    if (sceneDir.isDirectory) {
-                        try {
-                            const sceneFiles = await readDir(`${sceneBaseDir}/${sceneDir.name}`, { baseDir: BaseDirectory.Picture })
-                            for (const file of sceneFiles) {
-                                if (file.name && (file.name.toLowerCase().endsWith('.png') || file.name.toLowerCase().endsWith('.jpg') || file.name.toLowerCase().endsWith('.webp'))) {
-                                    const fullPath = await join(picturePath, sceneBaseDir, sceneDir.name, file.name)
-                                    const match = file.name.match(/_(\d+)\.[^.]+$/)
-                                    const timestamp = match ? parseInt(match[1]) : 0
-
-                                    // FORCE SCENE TYPE for items in NAIS_Scene, regardless of filename
-                                    // This fixes existing images not showing as scene type
-                                    images.push({
-                                        name: file.name,
-                                        path: fullPath,
-                                        timestamp,
-                                        type: 'scene'
-                                    })
-                                }
-                            }
-                        } catch (e) {
-                            console.warn(`Failed to read scene dir ${sceneDir.name}:`, e)
+                    for (const entry of entries) {
+                        if (entry.name && (entry.name.toLowerCase().endsWith('.png') || entry.name.toLowerCase().endsWith('.jpg') || entry.name.toLowerCase().endsWith('.webp'))) {
+                            const fullPath = await join(picturePath, defaultOutputDir, entry.name)
+                            const match = entry.name.match(/_(\d+)\.[^.]+$/)
+                            const timestamp = match ? parseInt(match[1]) : 0
+                            images.push({
+                                name: entry.name,
+                                path: fullPath,
+                                timestamp,
+                                type: getGenerationType(entry.name)
+                            })
                         }
                     }
                 }
+            } catch (e) {
+                console.warn('Failed to load from default Pictures folder:', e)
+            }
+
+            // Additionally load from absolute path if set
+            if (useAbsolutePath && savePath) {
+                try {
+                    if (await exists(savePath)) {
+                        const entries = await readDir(savePath)
+
+                        for (const entry of entries) {
+                            if (entry.name && (entry.name.toLowerCase().endsWith('.png') || entry.name.toLowerCase().endsWith('.jpg') || entry.name.toLowerCase().endsWith('.webp'))) {
+                                const fullPath = await join(savePath, entry.name)
+
+                                // Skip duplicates
+                                if (images.some(img => img.path === fullPath)) continue
+
+                                const match = entry.name.match(/_(\d+)\.[^.]+$/)
+                                const timestamp = match ? parseInt(match[1]) : 0
+                                images.push({
+                                    name: entry.name,
+                                    path: fullPath,
+                                    timestamp,
+                                    type: getGenerationType(entry.name)
+                                })
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Failed to load from absolute path:', e)
+                }
+            }
+
+            // 2. Load Scene Images (Recursive) - Always load from Pictures, plus absolute path if set
+            const sceneBaseDir = 'NAIS_Scene'
+            const scenePicturePath = await pictureDir()
+
+            // Helper function to load scene images from a directory
+            const loadSceneImagesFromDir = async (baseDir: string, useBaseDir: boolean = false) => {
+                try {
+                    const checkExists = useBaseDir
+                        ? await exists(sceneBaseDir, { baseDir: BaseDirectory.Picture })
+                        : await exists(baseDir)
+
+                    if (!checkExists) return
+
+                    const sceneDirs = useBaseDir
+                        ? await readDir(sceneBaseDir, { baseDir: BaseDirectory.Picture })
+                        : await readDir(baseDir)
+
+                    for (const sceneDir of sceneDirs) {
+                        if (sceneDir.isDirectory) {
+                            try {
+                                const sceneFolderPath = useBaseDir
+                                    ? `${sceneBaseDir}/${sceneDir.name}`
+                                    : await join(baseDir, sceneDir.name)
+
+                                const sceneFiles = useBaseDir
+                                    ? await readDir(sceneFolderPath, { baseDir: BaseDirectory.Picture })
+                                    : await readDir(sceneFolderPath)
+
+                                for (const file of sceneFiles) {
+                                    if (file.name && (file.name.toLowerCase().endsWith('.png') || file.name.toLowerCase().endsWith('.jpg') || file.name.toLowerCase().endsWith('.webp'))) {
+                                        const fullPath = useBaseDir
+                                            ? await join(scenePicturePath, sceneBaseDir, sceneDir.name, file.name)
+                                            : await join(sceneFolderPath, file.name)
+
+                                        // Skip if already in images array (avoid duplicates)
+                                        if (images.some(img => img.path === fullPath)) continue
+
+                                        const match = file.name.match(/_(\d+)\.[^.]+$/)
+                                        const timestamp = match ? parseInt(match[1]) : 0
+
+                                        images.push({
+                                            name: file.name,
+                                            path: fullPath,
+                                            timestamp,
+                                            type: 'scene'
+                                        })
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn(`Failed to read scene dir ${sceneDir.name}:`, e)
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Failed to load scene images from:', baseDir, e)
+                }
+            }
+
+            // Always load from Pictures/NAIS_Scene (for backward compatibility)
+            await loadSceneImagesFromDir(sceneBaseDir, true)
+
+            // Additionally load from absolute path if set
+            if (useAbsolutePath && savePath) {
+                const absoluteSceneDir = await join(savePath, sceneBaseDir)
+                await loadSceneImagesFromDir(absoluteSceneDir, false)
             }
 
             images.sort((a, b) => b.timestamp - a.timestamp)
@@ -442,7 +512,7 @@ export function HistoryPanel() {
                 setPreviewImage(`data:image/png;base64,${result.imageData}`)
 
                 // Save to disk if autoSave is enabled
-                const { autoSave } = useSettingsStore.getState()
+                const { autoSave, useAbsolutePath } = useSettingsStore.getState()
                 if (autoSave) {
                     try {
                         const binaryString = atob(result.imageData)
@@ -454,17 +524,29 @@ export function HistoryPanel() {
                         const fileName = `NAIS_${Date.now()}.png`
                         const outputDir = savePath || 'NAIS_Output'
 
-                        const dirExists = await exists(outputDir, { baseDir: BaseDirectory.Picture })
-                        if (!dirExists) {
-                            await mkdir(outputDir, { baseDir: BaseDirectory.Picture })
-                        }
+                        let fullPath: string
 
-                        await writeFile(`${outputDir}/${fileName}`, bytes, { baseDir: BaseDirectory.Picture })
+                        if (useAbsolutePath) {
+                            // Save to absolute path directly
+                            const dirExists = await exists(outputDir)
+                            if (!dirExists) {
+                                await mkdir(outputDir, { recursive: true })
+                            }
+                            fullPath = await join(outputDir, fileName)
+                            await writeFile(fullPath, bytes)
+                        } else {
+                            // Save relative to Pictures directory
+                            const dirExists = await exists(outputDir, { baseDir: BaseDirectory.Picture })
+                            if (!dirExists) {
+                                await mkdir(outputDir, { baseDir: BaseDirectory.Picture })
+                            }
+                            await writeFile(`${outputDir}/${fileName}`, bytes, { baseDir: BaseDirectory.Picture })
+                            const picPath = await pictureDir()
+                            fullPath = await join(picPath, outputDir, fileName)
+                        }
 
                         // Dispatch event for instant history update
                         try {
-                            const picPath = await pictureDir()
-                            const fullPath = await join(picPath, outputDir, fileName)
                             window.dispatchEvent(new CustomEvent('newImageGenerated', {
                                 detail: { path: fullPath, data: `data:image/png;base64,${result.imageData}` }
                             }))

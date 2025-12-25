@@ -397,6 +397,11 @@
             "description": "生成された画像の保存場所を設定します。",
             "folder": "保存フォルダ",
             "folderHelp": "ピクチャフォルダ内のサブフォルダ名を入力してください。",
+            "browse": "参照",
+            "selectFolder": "保存フォルダを選択",
+            "absolutePathHelp": "画像はこのフォルダに直接保存されます。",
+            "resetDefault": "デフォルトに戻す",
+            "customPath": "カスタムパス",
             "autoSave": "自動保存",
             "autoSaveHelp": "画像生成時に自動的に保存します。"
         },

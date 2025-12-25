@@ -393,7 +393,7 @@ export const useGenerationStore = create<GenerationState>()(
                             }
 
                             // Save Image: Try Tauri FS first, fallback to browser
-                            const { savePath, autoSave } = useSettingsStore.getState()
+                            const { savePath, autoSave, useAbsolutePath } = useSettingsStore.getState()
 
                             if (autoSave) {
                                 try {
@@ -413,18 +413,29 @@ export const useGenerationStore = create<GenerationState>()(
                                     const fileName = `NAIS_${typePrefix}${Date.now()}.png`
                                     const outputDir = savePath || 'NAIS_Output'
 
-                                    // Check/Create directory in Pictures
-                                    const dirExists = await exists(outputDir, { baseDir: BaseDirectory.Picture })
-                                    if (!dirExists) {
-                                        await mkdir(outputDir, { baseDir: BaseDirectory.Picture })
-                                    }
+                                    let fullPath: string
 
-                                    await writeFile(`${outputDir}/${fileName}`, bytes, { baseDir: BaseDirectory.Picture })
+                                    if (useAbsolutePath) {
+                                        // Save to absolute path directly
+                                        const dirExists = await exists(outputDir)
+                                        if (!dirExists) {
+                                            await mkdir(outputDir, { recursive: true })
+                                        }
+                                        fullPath = await join(outputDir, fileName)
+                                        await writeFile(fullPath, bytes)
+                                    } else {
+                                        // Save relative to Pictures directory
+                                        const dirExists = await exists(outputDir, { baseDir: BaseDirectory.Picture })
+                                        if (!dirExists) {
+                                            await mkdir(outputDir, { baseDir: BaseDirectory.Picture })
+                                        }
+                                        await writeFile(`${outputDir}/${fileName}`, bytes, { baseDir: BaseDirectory.Picture })
+                                        const picPath = await pictureDir()
+                                        fullPath = await join(picPath, outputDir, fileName)
+                                    }
 
                                     // Notify HistoryPanel immediately with image data
                                     try {
-                                        const picPath = await pictureDir()
-                                        const fullPath = await join(picPath, outputDir, fileName)
                                         window.dispatchEvent(new CustomEvent('newImageGenerated', {
                                             detail: { path: fullPath, data: imageUrl }
                                         }))

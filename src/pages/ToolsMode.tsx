@@ -157,8 +157,8 @@ export default function ToolsMode() {
         try {
             const result = await smartTools.upscale(processedImage, token)
 
-            // Save to Pictures/NAIS_Output with UPSCALE prefix
-            const { savePath } = useSettingsStore.getState()
+            // Save to configured save path with UPSCALE prefix
+            const { savePath, useAbsolutePath } = useSettingsStore.getState()
             const outputDir = savePath || 'NAIS_Output'
             const fileName = `NAIS_UPSCALE_${Date.now()}.png`
 
@@ -166,18 +166,29 @@ export default function ToolsMode() {
                 const base64Data = result.replace(/^data:image\/png;base64,/, '')
                 const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))
 
-                // Ensure directory exists
-                const dirExists = await exists(outputDir, { baseDir: BaseDirectory.Picture })
-                if (!dirExists) {
-                    await mkdir(outputDir, { baseDir: BaseDirectory.Picture })
-                }
+                let fullPath: string
 
-                await writeFile(`${outputDir}/${fileName}`, binaryData, { baseDir: BaseDirectory.Picture })
+                if (useAbsolutePath) {
+                    // Save to absolute path directly
+                    const dirExists = await exists(outputDir)
+                    if (!dirExists) {
+                        await mkdir(outputDir, { recursive: true })
+                    }
+                    fullPath = await join(outputDir, fileName)
+                    await writeFile(fullPath, binaryData)
+                } else {
+                    // Save relative to Pictures directory
+                    const dirExists = await exists(outputDir, { baseDir: BaseDirectory.Picture })
+                    if (!dirExists) {
+                        await mkdir(outputDir, { baseDir: BaseDirectory.Picture })
+                    }
+                    await writeFile(`${outputDir}/${fileName}`, binaryData, { baseDir: BaseDirectory.Picture })
+                    const picPath = await pictureDir()
+                    fullPath = await join(picPath, outputDir, fileName)
+                }
 
                 // Dispatch event for instant history update
                 try {
-                    const picPath = await pictureDir()
-                    const fullPath = await join(picPath, outputDir, fileName)
                     window.dispatchEvent(new CustomEvent('newImageGenerated', {
                         detail: { path: fullPath, data: result }
                     }))
@@ -216,13 +227,25 @@ export default function ToolsMode() {
             for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i)
 
             const filename = `NAIS_Edit_${Date.now()}.png`
-            const savePath = 'NAIS_Output' // Should ideally respect settings
+            const { savePath, useAbsolutePath } = useSettingsStore.getState()
+            const outputDir = savePath || 'NAIS_Output'
 
-            // Need to verify 'NAIS_Output' exists or create it?
-            // Users usually have it.
-            // Using BaseDirectory.Picture
-
-            await writeFile(`${savePath}/${filename}`, array, { baseDir: BaseDirectory.Picture })
+            if (useAbsolutePath) {
+                // Save to absolute path directly
+                const dirExists = await exists(outputDir)
+                if (!dirExists) {
+                    await mkdir(outputDir, { recursive: true })
+                }
+                const fullPath = await join(outputDir, filename)
+                await writeFile(fullPath, array)
+            } else {
+                // Save relative to Pictures directory
+                const dirExists = await exists(outputDir, { baseDir: BaseDirectory.Picture })
+                if (!dirExists) {
+                    await mkdir(outputDir, { baseDir: BaseDirectory.Picture })
+                }
+                await writeFile(`${outputDir}/${filename}`, array, { baseDir: BaseDirectory.Picture })
+            }
 
             toast({ title: t('common.saved', '저장됨'), description: filename, variant: 'success' })
         } catch (e) {

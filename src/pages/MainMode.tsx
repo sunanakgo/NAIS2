@@ -122,7 +122,7 @@ export default function MainMode() {
                 genStore.setPreviewImage(`data:image/png;base64,${result.imageData}`)
 
                 // Save to disk if autoSave is enabled
-                const { savePath, autoSave } = useSettingsStore.getState()
+                const { savePath, autoSave, useAbsolutePath } = useSettingsStore.getState()
                 if (autoSave) {
                     try {
                         const binaryString = atob(result.imageData)
@@ -134,17 +134,29 @@ export default function MainMode() {
                         const fileName = `NAIS_${Date.now()}.png`
                         const outputDir = savePath || 'NAIS_Output'
 
-                        const dirExists = await exists(outputDir, { baseDir: BaseDirectory.Picture })
-                        if (!dirExists) {
-                            await mkdir(outputDir, { baseDir: BaseDirectory.Picture })
-                        }
+                        let fullPath: string
 
-                        await writeFile(`${outputDir}/${fileName}`, bytes, { baseDir: BaseDirectory.Picture })
+                        if (useAbsolutePath) {
+                            // Save to absolute path directly
+                            const dirExists = await exists(outputDir)
+                            if (!dirExists) {
+                                await mkdir(outputDir, { recursive: true })
+                            }
+                            fullPath = await join(outputDir, fileName)
+                            await writeFile(fullPath, bytes)
+                        } else {
+                            // Save relative to Pictures directory
+                            const dirExists = await exists(outputDir, { baseDir: BaseDirectory.Picture })
+                            if (!dirExists) {
+                                await mkdir(outputDir, { baseDir: BaseDirectory.Picture })
+                            }
+                            await writeFile(`${outputDir}/${fileName}`, bytes, { baseDir: BaseDirectory.Picture })
+                            const picPath = await pictureDir()
+                            fullPath = await join(picPath, outputDir, fileName)
+                        }
 
                         // Dispatch event for instant history update
                         try {
-                            const picPath = await pictureDir()
-                            const fullPath = await join(picPath, outputDir, fileName)
                             window.dispatchEvent(new CustomEvent('newImageGenerated', {
                                 detail: { path: fullPath, data: `data:image/png;base64,${result.imageData}` }
                             }))
@@ -224,10 +236,16 @@ export default function MainMode() {
     // Open folder containing saved images
     const handleOpenFolder = async () => {
         try {
-            const { savePath } = useSettingsStore.getState()
-            const picPath = await pictureDir()
+            const { savePath, useAbsolutePath } = useSettingsStore.getState()
             const finalSavePath = savePath || 'NAIS_Output'
-            const folderPath = await join(picPath, finalSavePath)
+
+            let folderPath: string
+            if (useAbsolutePath) {
+                folderPath = finalSavePath
+            } else {
+                const picPath = await pictureDir()
+                folderPath = await join(picPath, finalSavePath)
+            }
 
             const dirExists = await exists(folderPath)
             if (!dirExists) {

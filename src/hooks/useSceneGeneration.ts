@@ -204,27 +204,46 @@ export function useSceneGeneration() {
                 if (result.success && result.imageData) {
                     // Sanitize scene name for folder name
                     const safeSceneName = scene.name.replace(/[<>:"/\\|?*]/g, '_').trim() || 'Untitled_Scene'
-                    const sceneDir = `NAIS_Scene/${safeSceneName}`
                     const fileName = `NAIS_SCENE_${Date.now()}.png`
 
                     try {
                         const base64Data = result.imageData.replace(/^data:image\/png;base64,/, '')
                         const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))
 
-                        const baseDir = await pictureDir()
+                        const { useAbsolutePath } = useSettingsStore.getState()
+                        let fullPath: string
 
-                        const naisSceneDir = 'NAIS_Scene'
-                        if (!(await exists(naisSceneDir, { baseDir: BaseDirectory.Picture }))) {
-                            await mkdir(naisSceneDir, { baseDir: BaseDirectory.Picture })
+                        if (useAbsolutePath && savePath) {
+                            // Save to absolute path: savePath/NAIS_Scene/sceneName/
+                            const naisSceneDir = await join(savePath, 'NAIS_Scene')
+                            const sceneDir = await join(naisSceneDir, safeSceneName)
+
+                            if (!(await exists(naisSceneDir))) {
+                                await mkdir(naisSceneDir, { recursive: true })
+                            }
+                            if (!(await exists(sceneDir))) {
+                                await mkdir(sceneDir, { recursive: true })
+                            }
+
+                            fullPath = await join(sceneDir, fileName)
+                            await writeFile(fullPath, binaryData)
+                        } else {
+                            // Save to Pictures/NAIS_Scene/sceneName/
+                            const baseDir = await pictureDir()
+                            const sceneDir = `NAIS_Scene/${safeSceneName}`
+
+                            const naisSceneDir = 'NAIS_Scene'
+                            if (!(await exists(naisSceneDir, { baseDir: BaseDirectory.Picture }))) {
+                                await mkdir(naisSceneDir, { baseDir: BaseDirectory.Picture })
+                            }
+
+                            if (!(await exists(sceneDir, { baseDir: BaseDirectory.Picture }))) {
+                                await mkdir(sceneDir, { baseDir: BaseDirectory.Picture })
+                            }
+
+                            await writeFile(`${sceneDir}/${fileName}`, binaryData, { baseDir: BaseDirectory.Picture })
+                            fullPath = await join(baseDir, sceneDir, fileName)
                         }
-
-                        if (!(await exists(sceneDir, { baseDir: BaseDirectory.Picture }))) {
-                            await mkdir(sceneDir, { baseDir: BaseDirectory.Picture })
-                        }
-
-                        await writeFile(`${sceneDir}/${fileName}`, binaryData, { baseDir: BaseDirectory.Picture })
-
-                        const fullPath = await join(baseDir, sceneDir, fileName)
 
                         // Notify HistoryPanel immediately with image data
                         window.dispatchEvent(new CustomEvent('newImageGenerated', {
@@ -245,16 +264,8 @@ export function useSceneGeneration() {
 
                     } catch (saveError) {
                         console.error('Failed to save scene image file:', saveError)
-                        addImageToScene(activePresetId, scene.id, `data:image/png;base64,${result.imageData}`)
-
-                        useGenerationStore.getState().addToHistory({
-                            id: Date.now().toString(),
-                            url: `data:image/png;base64,${result.imageData}`,
-                            prompt: finalPrompt,
-                            seed: params.seed,
-                            timestamp: new Date()
-                        })
-
+                        // DON'T add base64 image to store - it will exceed localStorage quota
+                        // Just show error and continue
                         toast({ title: t('common.saveFailed', '파일 저장 실패'), description: String(saveError), variant: 'destructive' })
                     }
 

@@ -11,6 +11,7 @@ export interface CustomResolution {
 interface SettingsState {
     // Save settings
     savePath: string
+    useAbsolutePath: boolean  // If true, savePath is absolute path; if false, relative to Pictures folder
     autoSave: boolean
 
     // Custom resolution presets
@@ -26,7 +27,7 @@ interface SettingsState {
     geminiApiKey: string
 
     // Actions
-    setSavePath: (path: string) => void
+    setSavePath: (path: string, useAbsolute?: boolean) => void
     setAutoSave: (autoSave: boolean) => void
     addCustomResolution: (resolution: Omit<CustomResolution, 'id'>) => void
     removeCustomResolution: (id: string) => void
@@ -39,13 +40,17 @@ export const useSettingsStore = create<SettingsState>()(
     persist(
         (set) => ({
             savePath: 'NAIS_Output',
+            useAbsolutePath: false,  // Default: relative to Pictures folder
             autoSave: true,
             customResolutions: [],
             promptFontSize: 16, // Default text-base equivalent approximately
             useStreaming: true, // Default: enabled
             geminiApiKey: '', // Default: empty
 
-            setSavePath: (savePath) => set({ savePath }),
+            setSavePath: (savePath, useAbsolute) => set({
+                savePath,
+                useAbsolutePath: useAbsolute ?? false
+            }),
             setAutoSave: (autoSave) => set({ autoSave }),
 
             addCustomResolution: (resolution) => set((state) => ({

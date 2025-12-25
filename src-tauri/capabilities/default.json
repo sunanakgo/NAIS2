@@ -18,12 +18,31 @@
     "fs:allow-read",
     "fs:allow-write",
     "fs:allow-read-dir",
+    "fs:allow-remove",
+    "fs:allow-rename",
     "fs:allow-picture-read-recursive",
     "fs:allow-picture-write-recursive",
     "fs:allow-desktop-read-recursive",
     "fs:allow-desktop-write-recursive",
     "fs:allow-download-read-recursive",
     "fs:allow-download-write-recursive",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        {
+          "path": "$PICTURE/**"
+        },
+        {
+          "path": "$DESKTOP/**"
+        },
+        {
+          "path": "$DOWNLOAD/**"
+        },
+        {
+          "path": "**"
+        }
+      ]
+    },
     "http:allow-fetch",
     {
       "identifier": "http:default",

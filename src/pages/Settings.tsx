@@ -26,6 +26,7 @@ import {
     Palette,
     Type,
     Zap,
+    RotateCcw,
 } from 'lucide-react'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
@@ -35,6 +36,7 @@ import { useSettingsStore } from '@/stores/settings-store'
 import { toast } from '@/components/ui/use-toast'
 import NovelAILogo from '@/assets/novelai_logo.svg'
 import GeminiIcon from '@/assets/gemini-color.svg'
+import { open } from '@tauri-apps/plugin-dialog'
 
 const LANGUAGES = [
     { code: 'ko', name: '한국어' },
@@ -55,7 +57,7 @@ export default function Settings() {
     const { t, i18n } = useTranslation()
     const { theme, setTheme } = useThemeStore()
     const { token, isVerified, anlas, isLoading, verifyAndSave } = useAuthStore()
-    const { savePath, autoSave, setSavePath, setAutoSave, promptFontSize, setPromptFontSize, useStreaming, setUseStreaming, geminiApiKey, setGeminiApiKey } = useSettingsStore()
+    const { savePath, autoSave, setSavePath, setAutoSave, promptFontSize, setPromptFontSize, useStreaming, setUseStreaming, geminiApiKey, setGeminiApiKey, useAbsolutePath } = useSettingsStore()
     const [localGeminiKey, setLocalGeminiKey] = useState(geminiApiKey)
 
     const [activeSection, setActiveSection] = useState<SettingsSection>('general')
@@ -64,6 +66,7 @@ export default function Settings() {
         isVerified ? 'valid' : 'idle'
     )
     const [localSavePath, setLocalSavePath] = useState(savePath)
+    const [isAbsolutePath, setIsAbsolutePath] = useState(useAbsolutePath)
 
     useEffect(() => {
         if (token) {
@@ -85,7 +88,32 @@ export default function Settings() {
     }
 
     const handleSavePath = () => {
-        setSavePath(localSavePath)
+        setSavePath(localSavePath, isAbsolutePath)
+        toast({ title: t('settingsPage.saved'), variant: 'success' })
+    }
+
+    // Browse for folder using native dialog
+    const handleBrowseFolder = async () => {
+        try {
+            const selected = await open({
+                directory: true,
+                multiple: false,
+                title: t('settingsPage.save.selectFolder', 'Select Save Folder'),
+            })
+            if (selected && typeof selected === 'string') {
+                setLocalSavePath(selected)
+                setIsAbsolutePath(true)
+            }
+        } catch (e) {
+            console.error('Folder selection failed:', e)
+        }
+    }
+
+    // Reset to default Pictures subfolder
+    const handleResetToDefault = async () => {
+        setLocalSavePath('NAIS_Output')
+        setIsAbsolutePath(false)
+        setSavePath('NAIS_Output', false)
         toast({ title: t('settingsPage.saved'), variant: 'success' })
     }
 
@@ -349,23 +377,49 @@ export default function Settings() {
                                 </p>
                             </div>
                             <div className="border border-border/50 rounded-xl p-6 space-y-6 bg-card/30">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">{t('settingsPage.save.folder')}</label>
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-medium">{t('settingsPage.save.folder')}</label>
+                                        {isAbsolutePath && (
+                                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                                {t('settingsPage.save.customPath', 'Custom Path')}
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="flex gap-2">
                                         <Input
                                             value={localSavePath}
-                                            onChange={(e) => setLocalSavePath(e.target.value)}
+                                            onChange={(e) => {
+                                                setLocalSavePath(e.target.value)
+                                                // If user manually types, assume it's relative unless it looks like an absolute path
+                                                const isAbsolute = /^[A-Za-z]:[\\/]/.test(e.target.value) || e.target.value.startsWith('/')
+                                                setIsAbsolutePath(isAbsolute)
+                                            }}
                                             placeholder="NAIS_Output"
                                             className="flex-1"
                                         />
+                                        <Button variant="outline" onClick={handleBrowseFolder}>
+                                            <FolderOpen className="h-4 w-4 mr-2" />
+                                            {t('settingsPage.save.browse', 'Browse')}
+                                        </Button>
                                         <Button onClick={handleSavePath}>
                                             <Save className="h-4 w-4 mr-2" />
                                             {t('settingsPage.saveBtn')}
                                         </Button>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">
-                                        {t('settingsPage.save.folderHelp')}
-                                    </p>
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs text-muted-foreground">
+                                            {isAbsolutePath
+                                                ? t('settingsPage.save.absolutePathHelp', 'Images will be saved to this exact folder.')
+                                                : t('settingsPage.save.folderHelp')}
+                                        </p>
+                                        {isAbsolutePath && (
+                                            <Button variant="ghost" size="sm" onClick={handleResetToDefault} className="h-6 text-xs">
+                                                <RotateCcw className="h-3 w-3 mr-1" />
+                                                {t('settingsPage.save.resetDefault', 'Reset to Default')}
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="flex items-center justify-between pt-4 border-t border-border/30">
