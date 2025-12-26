@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ThreeColumnLayout } from '@/components/layout/ThreeColumnLayout'
 import { Toaster } from '@/components/ui/toaster'
 import { useSceneGeneration } from '@/hooks/useSceneGeneration'
+import { useUpdateChecker } from '@/hooks/useUpdateChecker'
 import MainMode from '@/pages/MainMode'
 import SceneMode from '@/pages/SceneMode'
 import SceneDetail from '@/pages/SceneDetail'
@@ -14,6 +15,7 @@ import ToolsMode from '@/pages/ToolsMode'
 function App() {
     // Scene generation hook at App level - persists across page navigation
     useSceneGeneration()
+    useUpdateChecker()
 
     // Disable right-click globally except for allowed elements
     useEffect(() => {

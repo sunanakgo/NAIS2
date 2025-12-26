@@ -3,6 +3,15 @@
         "name": "NAIS2",
         "description": "NovelAI 統合スタジオ"
     },
+    "update": {
+        "available": "アップデートがあります",
+        "version": "v{{version}}にアップデートできます",
+        "downloading": "ダウンロード中...",
+        "pleaseWait": "しばらくお待ちください",
+        "installed": "インストール完了",
+        "restarting": "アプリを再起動します",
+        "failed": "アップデート失敗"
+    },
     "toast": {
         "generationCancelled": {
             "title": "生成キャンセル",

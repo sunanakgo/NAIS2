@@ -3,6 +3,15 @@
         "name": "NAIS2",
         "description": "NovelAI 통합 스튜디오"
     },
+    "update": {
+        "available": "업데이트 사용 가능",
+        "version": "v{{version}}으로 업데이트할 수 있습니다",
+        "downloading": "다운로드 중...",
+        "pleaseWait": "잠시만 기다려주세요",
+        "installed": "설치 완료",
+        "restarting": "앱을 재시작합니다",
+        "failed": "업데이트 실패"
+    },
     "common": {
         "save": "저장",
         "saved": "저장되었습니다",

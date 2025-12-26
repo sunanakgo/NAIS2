@@ -24,5 +24,8 @@ src-tauri/binaries/tagger-server-x86_64-pc-windows-msvc.exe
 # Agent
 .agent/
 
+# Tauri Signing Keys
+~/.tauri/
+
 # Misc
 arcalive-intro.html

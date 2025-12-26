@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "NAIS2",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "identifier": "com.sunakgo.nais2",
   "build": {
     "frontendDist": "../dist",
@@ -29,11 +29,18 @@
   "plugins": {
     "shell": {
       "open": true
+    },
+    "updater": {
+      "endpoints": [
+        "https://github.com/sunanakgo/NAIS2/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM0NDgxN0Q3MTUyMjQxOTYKUldTV1FTSVYxeGRJeEZpdWFOMlU0K2MvK3QvZHJnbVBtYUY5R1hXVHFsUHRpWFRmU1ZsZW53b0oK"
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

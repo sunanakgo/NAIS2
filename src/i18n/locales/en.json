@@ -3,6 +3,15 @@
         "name": "NAIS2",
         "description": "NovelAI Integrated Studio"
     },
+    "update": {
+        "available": "Update Available",
+        "version": "Version {{version}} is available",
+        "downloading": "Downloading...",
+        "pleaseWait": "Please wait",
+        "installed": "Installation Complete",
+        "restarting": "Restarting app",
+        "failed": "Update Failed"
+    },
     "common": {
         "save": "Save",
         "saved": "Saved successfully",
