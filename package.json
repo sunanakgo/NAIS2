@@ -1,6 +1,7 @@
 {
   "name": "nais2",
   "version": "2.0.4",
+  "license": "GPL-3.0",
   "private": true,
   "type": "module",
   "scripts": {
