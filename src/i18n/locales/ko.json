@@ -12,7 +12,12 @@
         "restarting": "앱을 재시작합니다",
         "failed": "업데이트 실패",
         "upToDate": "최신 버전입니다",
-        "checkFailed": "업데이트 확인 실패"
+        "checkFailed": "업데이트 확인 실패",
+        "downloadComplete": "다운로드 완료",
+        "readyToInstall": "업데이트 설치 준비됨",
+        "readyToInstallDesc": "작업을 저장한 후 설치하세요.",
+        "installNow": "지금 설치",
+        "restart": "재시작"
     },
     "common": {
         "save": "저장",

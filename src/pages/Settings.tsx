@@ -31,6 +31,7 @@ import {
     RefreshCw,
     Download,
     Timer,
+    Sparkles,
 } from 'lucide-react'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
@@ -44,6 +45,7 @@ import { open } from '@tauri-apps/plugin-dialog'
 import { check } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
 import { getVersion } from '@tauri-apps/api/app'
+import { useUpdateStore, setCurrentUpdateObject } from '@/stores/update-store'
 
 const LANGUAGES = [
     { code: 'ko', name: '한국어' },
@@ -78,6 +80,7 @@ export default function Settings() {
     const [isAbsoluteLibraryPath, setIsAbsoluteLibraryPath] = useState(useAbsoluteLibraryPath)
     const [appVersion, setAppVersion] = useState('')
     const [isCheckingUpdate, setIsCheckingUpdate] = useState(false)
+    const { pendingUpdate, isDownloading, setPendingUpdate, setIsDownloading, setDownloadProgress } = useUpdateStore()
 
     useEffect(() => {
         getVersion().then(setAppVersion).catch(() => setAppVersion('dev'))
@@ -260,75 +263,142 @@ export default function Settings() {
                                 </div>
 
                                 {/* Version Info */}
-                                <div className="flex items-center justify-between pt-4 border-t border-border/30">
-                                    <div className="space-y-0.5">
-                                        <label className="text-sm font-medium flex items-center gap-2">
-                                            <Info className="h-4 w-4 text-blue-500" />
-                                            {t('settingsPage.version.title', 'Version')}
-                                        </label>
-                                        <p className="text-xs text-muted-foreground">
-                                            NAIS2 v{appVersion}
-                                        </p>
-                                    </div>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={async () => {
-                                            setIsCheckingUpdate(true)
-                                            try {
-                                                const update = await check()
-                                                if (update) {
-                                                    toast({
-                                                        title: t('update.available', '업데이트 사용 가능'),
-                                                        description: t('update.version', { version: update.version }),
-                                                        action: (
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={async () => {
-                                                                    toast({ title: t('update.downloading', '다운로드 중...'), description: t('update.pleaseWait', '잠시만 기다려주세요') })
-                                                                    await update.downloadAndInstall()
-                                                                    // Show restart confirmation instead of auto-restart
-                                                                    toast({
-                                                                        title: t('update.installed', '설치 완료'),
-                                                                        description: t('update.restartConfirm', '앱을 재시작하시겠습니까? 저장하지 않은 작업이 있다면 먼저 저장해주세요.'),
-                                                                        action: (
-                                                                            <Button
-                                                                                size="sm"
-                                                                                onClick={async () => {
-                                                                                    await relaunch()
-                                                                                }}
-                                                                            >
-                                                                                <RefreshCw className="h-4 w-4 mr-1" />
-                                                                                {t('update.restart', '재시작')}
-                                                                            </Button>
-                                                                        ),
-                                                                    })
-                                                                }}
-                                                            >
-                                                                <Download className="h-4 w-4" />
-                                                            </Button>
-                                                        ),
-                                                    })
-                                                } else {
-                                                    toast({ title: t('update.upToDate', '최신 버전입니다'), variant: 'success' })
+                                <div className="space-y-4 pt-4 border-t border-border/30">
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-0.5">
+                                            <label className="text-sm font-medium flex items-center gap-2">
+                                                <Info className="h-4 w-4 text-blue-500" />
+                                                {t('settingsPage.version.title', 'Version')}
+                                            </label>
+                                            <p className="text-xs text-muted-foreground">
+                                                NAIS2 v{appVersion}
+                                            </p>
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={async () => {
+                                                setIsCheckingUpdate(true)
+                                                try {
+                                                    const update = await check()
+                                                    if (update) {
+                                                        // Store the update object
+                                                        setCurrentUpdateObject(update)
+
+                                                        // Check if already downloaded
+                                                        if (pendingUpdate && pendingUpdate.version === update.version) {
+                                                            toast({
+                                                                title: t('update.readyToInstall', '업데이트 설치 준비됨'),
+                                                                description: t('update.version', { version: update.version }),
+                                                            })
+                                                        } else {
+                                                            toast({
+                                                                title: t('update.available', '업데이트 사용 가능'),
+                                                                description: t('update.version', { version: update.version }),
+                                                                action: (
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={async () => {
+                                                                            setIsDownloading(true)
+                                                                            toast({ title: t('update.downloading', '다운로드 중...'), description: t('update.pleaseWait', '잠시만 기다려주세요') })
+                                                                            try {
+                                                                                let totalBytes = 0
+                                                                                let downloadedBytes = 0
+                                                                                await update.download((event) => {
+                                                                                    if (event.event === 'Started' && event.data.contentLength) {
+                                                                                        totalBytes = event.data.contentLength
+                                                                                    } else if (event.event === 'Progress') {
+                                                                                        downloadedBytes += event.data.chunkLength
+                                                                                        if (totalBytes > 0) {
+                                                                                            setDownloadProgress(Math.round((downloadedBytes / totalBytes) * 100))
+                                                                                        }
+                                                                                    }
+                                                                                })
+                                                                                setPendingUpdate({ version: update.version, downloadedAt: Date.now() })
+                                                                                toast({
+                                                                                    title: t('update.downloadComplete', '다운로드 완료'),
+                                                                                    description: t('update.readyToInstallDesc', '작업을 저장한 후 설치하세요.'),
+                                                                                    action: (
+                                                                                        <Button
+                                                                                            size="sm"
+                                                                                            onClick={async () => {
+                                                                                                await update.install()
+                                                                                                await relaunch()
+                                                                                            }}
+                                                                                        >
+                                                                                            <Sparkles className="h-4 w-4 mr-1" />
+                                                                                            {t('update.installNow', '지금 설치')}
+                                                                                        </Button>
+                                                                                    ),
+                                                                                })
+                                                                            } catch (e) {
+                                                                                toast({ title: t('update.failed', '다운로드 실패'), variant: 'destructive' })
+                                                                            } finally {
+                                                                                setIsDownloading(false)
+                                                                            }
+                                                                        }}
+                                                                        disabled={isDownloading}
+                                                                    >
+                                                                        {isDownloading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                                                                    </Button>
+                                                                ),
+                                                            })
+                                                        }
+                                                    } else {
+                                                        toast({ title: t('update.upToDate', '최신 버전입니다'), variant: 'success' })
+                                                    }
+                                                } catch (e) {
+                                                    toast({ title: t('update.checkFailed', '업데이트 확인 실패'), variant: 'destructive' })
+                                                } finally {
+                                                    setIsCheckingUpdate(false)
                                                 }
-                                            } catch (e) {
-                                                toast({ title: t('update.checkFailed', '업데이트 확인 실패'), variant: 'destructive' })
-                                            } finally {
-                                                setIsCheckingUpdate(false)
-                                            }
-                                        }}
-                                        disabled={isCheckingUpdate}
-                                    >
-                                        {isCheckingUpdate ? (
-                                            <RefreshCw className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <>
-                                                <RefreshCw className="h-4 w-4 mr-2" />
-                                                {t('settingsPage.version.checkUpdate', 'Check for Updates')}
-                                            </>
-                                        )}
-                                    </Button>
+                                            }}
+                                            disabled={isCheckingUpdate}
+                                        >
+                                            {isCheckingUpdate ? (
+                                                <RefreshCw className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <>
+                                                    <RefreshCw className="h-4 w-4 mr-2" />
+                                                    {t('settingsPage.version.checkUpdate', 'Check for Updates')}
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+
+                                    {/* Pending Update Install Section */}
+                                    {pendingUpdate && (
+                                        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg border border-green-500/20">
+                                            <div className="flex items-center gap-2">
+                                                <Sparkles className="h-4 w-4 text-green-500" />
+                                                <div>
+                                                    <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                                                        {t('update.readyToInstall', '업데이트 설치 준비됨')}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        v{pendingUpdate.version}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                size="sm"
+                                                onClick={async () => {
+                                                    try {
+                                                        const update = await check()
+                                                        if (update) {
+                                                            await update.install()
+                                                            await relaunch()
+                                                        }
+                                                    } catch (e) {
+                                                        toast({ title: t('update.failed', '설치 실패'), variant: 'destructive' })
+                                                    }
+                                                }}
+                                            >
+                                                <Sparkles className="h-4 w-4 mr-1" />
+                                                {t('update.installNow', '지금 설치')}
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </section>

@@ -12,7 +12,12 @@
         "restarting": "アプリを再起動します",
         "failed": "アップデート失敗",
         "upToDate": "最新バージョンです",
-        "checkFailed": "アップデート確認失敗"
+        "checkFailed": "アップデート確認失敗",
+        "downloadComplete": "ダウンロード完了",
+        "readyToInstall": "インストール準備完了",
+        "readyToInstallDesc": "インストール前に作業を保存してください。",
+        "installNow": "今すぐインストール",
+        "restart": "再起動"
     },
     "toast": {
         "generationCancelled": {

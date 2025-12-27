@@ -12,7 +12,12 @@
         "restarting": "Restarting app",
         "failed": "Update Failed",
         "upToDate": "You're up to date",
-        "checkFailed": "Update check failed"
+        "checkFailed": "Update check failed",
+        "downloadComplete": "Download Complete",
+        "readyToInstall": "Ready to Install",
+        "readyToInstallDesc": "Save your work before installing.",
+        "installNow": "Install Now",
+        "restart": "Restart"
     },
     "common": {
         "save": "Save",
