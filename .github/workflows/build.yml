@@ -20,10 +20,15 @@ jobs:
             target: ''
             tagger_target: 'x86_64-pc-windows-msvc'
 
-          - platform: 'macos-latest'
+          - platform: 'macos-13'
             args: '--target x86_64-apple-darwin'
             target: 'x86_64-apple-darwin'
             tagger_target: 'x86_64-apple-darwin'
+
+          - platform: 'macos-14'
+            args: '--target aarch64-apple-darwin'
+            target: 'aarch64-apple-darwin'
+            tagger_target: 'aarch64-apple-darwin'
 
     runs-on: ${{ matrix.platform }}
     
