@@ -21,10 +21,11 @@ jobs:
             tagger_target: 'x86_64-pc-windows-msvc'
             python_arch: 'x64'
 
-          - platform: 'macos-12'
+          - platform: 'macos-14'
             args: '--target x86_64-apple-darwin'
             target: 'x86_64-apple-darwin'
             tagger_target: 'x86_64-apple-darwin'
+            python_arch: 'x64'
 
           - platform: 'macos-14'
             args: '--target aarch64-apple-darwin'
@@ -43,6 +44,13 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+
+      - name: Setup gettext library for Intel Python on Apple Silicon
+        if: matrix.platform == 'macos-14' && matrix.python_arch == 'x64'
+        run: |
+          brew install gettext
+          mkdir -p /usr/local/opt/gettext/lib
+          cp /opt/homebrew/opt/gettext/lib/libintl.8.dylib /usr/local/opt/gettext/lib/libintl.8.dylib
 
 
 
