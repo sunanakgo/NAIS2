@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware'
 export interface ReferenceImage {
     id: string
     base64: string
+    encodedVibe?: string  // Pre-encoded vibe data from PNG metadata (skips /ai/encode-vibe API)
     informationExtracted: number // 0 to 1
     strength: number // 0 to 1 (or higher depending on API? usually 0-1)
 }
@@ -17,7 +18,7 @@ interface CharacterState {
     updateCharacterImage: (id: string, updates: Partial<ReferenceImage>) => void
     removeCharacterImage: (id: string) => void
 
-    addVibeImage: (base64: string) => void
+    addVibeImage: (base64: string, encodedVibe?: string, informationExtracted?: number, strength?: number) => void
     updateVibeImage: (id: string, updates: Partial<ReferenceImage>) => void
     removeVibeImage: (id: string) => void
 
@@ -52,14 +53,15 @@ export const useCharacterStore = create<CharacterState>()(
                 characterImages: state.characterImages.filter(img => img.id !== id)
             })),
 
-            addVibeImage: (base64) => set((state) => ({
+            addVibeImage: (base64, encodedVibe, informationExtracted, strength) => set((state) => ({
                 vibeImages: [
                     ...state.vibeImages,
                     {
                         id: Date.now().toString(),
                         base64,
-                        informationExtracted: 1.0,
-                        strength: 0.6
+                        encodedVibe,
+                        informationExtracted: informationExtracted ?? 1.0,
+                        strength: strength ?? 0.6
                     }
                 ]
             })),

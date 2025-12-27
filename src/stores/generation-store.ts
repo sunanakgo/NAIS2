@@ -350,6 +350,7 @@ export const useGenerationStore = create<GenerationState>()(
                             vibeImages: vibeImages.map(img => img.base64),
                             vibeInfo: vibeImages.map(img => img.informationExtracted),
                             vibeStrength: vibeImages.map(img => img.strength),
+                            preEncodedVibes: vibeImages.map(img => img.encodedVibe || null),
 
                             // Character Prompts (V4 char_captions with positions)
                             characterPrompts: characterPrompts.filter(c => c.enabled),
@@ -388,6 +389,19 @@ export const useGenerationStore = create<GenerationState>()(
                         if (result.success && result.imageData) {
                             const imageUrl = `data:image/png;base64,${result.imageData}`
                             set({ previewImage: imageUrl })
+
+                            // Cache newly encoded vibes back to character store for reuse
+                            if (result.encodedVibes && result.encodedVibes.length > 0) {
+                                const { vibeImages, updateVibeImage } = useCharacterStore.getState()
+                                let encodedIndex = 0
+                                for (let vi = 0; vi < vibeImages.length && encodedIndex < result.encodedVibes.length; vi++) {
+                                    // Only update vibes that didn't have encoding before
+                                    if (!vibeImages[vi].encodedVibe) {
+                                        updateVibeImage(vibeImages[vi].id, { encodedVibe: result.encodedVibes[encodedIndex] })
+                                        encodedIndex++
+                                    }
+                                }
+                            }
 
                             const historyItem: HistoryItem = {
                                 id: Date.now().toString(),
@@ -469,6 +483,12 @@ export const useGenerationStore = create<GenerationState>()(
                             if (!get().seedLocked) {
                                 set({ seed: Math.floor(Math.random() * 4294967295) })
                             }
+
+                            // Apply generation delay between batches (not after the last one)
+                            const { generationDelay } = useSettingsStore.getState()
+                            if (i < batchCount - 1 && generationDelay > 0) {
+                                await new Promise(resolve => setTimeout(resolve, generationDelay))
+                            }
                         } else {
                             toast({
                                 title: i18n.t('toast.generationFailed.title'),
@@ -540,6 +560,13 @@ export const useGenerationStore = create<GenerationState>()(
                 batchCount: state.batchCount,
                 // Timing (for estimated time)
                 lastGenerationTime: state.lastGenerationTime,
+                // I2I & Inpainting state
+                sourceImage: state.sourceImage,
+                mask: state.mask,
+                i2iMode: state.i2iMode,
+                strength: state.strength,
+                noise: state.noise,
+                inpaintingPrompt: state.inpaintingPrompt,
                 // NOTE: history is NOT persisted to avoid localStorage quota issues
             }),
         }

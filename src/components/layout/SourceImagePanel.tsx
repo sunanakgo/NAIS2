@@ -85,25 +85,28 @@ export function SourceImagePanel() {
 
                 {/* Image Preview */}
                 <div className="p-2">
-                    <div className="relative aspect-video bg-muted/30 rounded-lg overflow-hidden">
-                        <img
-                            src={sourceImage}
-                            alt="Source"
-                            className="w-full h-full object-contain"
-                        />
-                        {/* Mask overlay - display actual mask image */}
-                        {isInpaint && mask && (
-                            <>
-                                <img
-                                    src={mask}
-                                    alt="Mask"
-                                    className="absolute inset-0 w-full h-full object-contain opacity-50 pointer-events-none"
-                                />
-                                <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-pink-500/80 text-white text-[10px] rounded-md">
-                                    {t('sourcePanel.maskSet', '마스크 설정됨')}
-                                </div>
-                            </>
-                        )}
+                    <div className="bg-muted/30 rounded-lg overflow-hidden flex items-center justify-center" style={{ maxHeight: '300px' }}>
+                        {/* Inner wrapper that sizes to source image */}
+                        <div className="relative inline-block">
+                            <img
+                                src={sourceImage}
+                                alt="Source"
+                                className="max-w-full max-h-[300px] object-contain block"
+                            />
+                            {/* Mask overlay - now positioned relative to source image, not container */}
+                            {isInpaint && mask && (
+                                <>
+                                    <img
+                                        src={mask}
+                                        alt="Mask"
+                                        className="absolute inset-0 w-full h-full opacity-50 pointer-events-none"
+                                    />
+                                    <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-pink-500/80 text-white text-[10px] rounded-md">
+                                        {t('sourcePanel.maskSet', '마스크 설정됨')}
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
 

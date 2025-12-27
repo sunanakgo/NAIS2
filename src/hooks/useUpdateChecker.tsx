@@ -31,12 +31,22 @@ export function useUpdateChecker() {
 
                                         await update.downloadAndInstall()
 
+                                        // Show restart confirmation instead of auto-restart
                                         toast({
                                             title: t('update.installed', '설치 완료'),
-                                            description: t('update.restarting', '앱을 재시작합니다'),
+                                            description: t('update.restartConfirm', '앱을 재시작하시겠습니까? 저장하지 않은 작업이 있다면 먼저 저장해주세요.'),
+                                            action: (
+                                                <Button
+                                                    size="sm"
+                                                    onClick={async () => {
+                                                        await relaunch()
+                                                    }}
+                                                >
+                                                    <RefreshCw className="h-4 w-4 mr-1" />
+                                                    {t('update.restart', '재시작')}
+                                                </Button>
+                                            ),
                                         })
-
-                                        await relaunch()
                                     } catch (error) {
                                         console.error('Update failed:', error)
                                         toast({

@@ -131,13 +131,16 @@
         "optResolution": "해상도",
         "optSeed": "시드",
         "optCharPrompts": "캐릭터 프롬프트",
-        "refWarning": "이미지 레퍼런스(Vibe/Character)는 메타데이터에서 불러올 수 없습니다.",
+        "refWarning": "이미지 레퍼런스(Vibe/Character)가 메타데이터에서 감지되었습니다.",
         "loadAnother": "다른 이미지",
         "apply": "적용",
         "applied": "메타데이터 적용됨",
         "appliedDesc": "선택한 설정이 프리셋에 적용되었습니다.",
         "loadFromImage": "메타데이터 불러오기",
-        "extractDesc": "PNG 파일에서 프롬프트와 설정을 추출합니다"
+        "extractDesc": "PNG 파일에서 프롬프트와 설정을 추출합니다",
+        "optVibeVersion": "바이브 트랜스퍼 (데이터만 포함)",
+        "vibeDesc": "원본 이미지는 없지만, 인코딩된 바이브 데이터를 복원합니다.",
+        "charRefWarning": "캐릭터 레퍼런스가 감지되었습니다. Director Tools를 통해 추출이 지원됩니다."
     },
     "nav": {
         "main": "메인",
@@ -215,7 +218,9 @@
         "uploadVibe": "바이브 이미지 업로드",
         "infoExtracted": "정보 추출률",
         "strength": "강도",
-        "noImages": "이미지가 없습니다."
+        "noImages": "이미지가 없습니다.",
+        "encodedDataOnly": "인코딩된\n데이터",
+        "preEncodedTooltip": "사전 인코딩됨 (API 호출 불필요)"
     },
     "imageRef": {
         "title": "이미지 참조 추가",
@@ -449,6 +454,10 @@
             "title": "스트리밍 생성",
             "description": "이미지 생성 중 실시간 진행 상황을 표시합니다"
         },
+        "generationDelay": {
+            "title": "생성 지연 시간",
+            "description": "배치 생성 시 API 과부하 방지를 위한 지연 시간"
+        },
         "version": {
             "title": "버전",
             "checkUpdate": "업데이트 확인"
@@ -497,6 +506,7 @@
         "apply": "프롬프트에 적용",
         "apiKeyRequired": "Gemini API 키가 필요합니다",
         "goToSettings": "설정 페이지에서 API 키를 입력해주세요",
-        "error": "오류 발생"
+        "error": "오류 발생",
+        "tokenUsage": "사용 토큰"
     }
 }

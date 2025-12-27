@@ -52,6 +52,7 @@ export interface GenerationParams {
     vibeImages?: string[]
     vibeInfo?: number[]
     vibeStrength?: number[]
+    preEncodedVibes?: (string | null)[]  // Pre-encoded vibe data (skips /ai/encode-vibe if present)
 
     // Character Prompts (V4 char_captions)
     characterPrompts?: {
@@ -399,7 +400,7 @@ function processCharacterImage(imageBase64: string): Promise<string> {
 export async function generateImage(
     token: string,
     params: GenerationParams
-): Promise<{ success: boolean; imageData?: string; error?: string }> {
+): Promise<{ success: boolean; imageData?: string; error?: string; encodedVibes?: string[] }> {
     if (!token) {
         return { success: false, error: 'API 토큰이 필요합니다' }
     }
@@ -407,11 +408,19 @@ export async function generateImage(
     try {
         // Process Vibe Images
         const processedVibeImages: string[] = []
+        const newlyEncodedVibes: (string | null)[] = []  // Track which vibes were newly encoded
         if (params.vibeImages && params.vibeImages.length > 0) {
             for (let i = 0; i < params.vibeImages.length; i++) {
+                // Use pre-encoded vibe if available (saves API call)
+                if (params.preEncodedVibes?.[i]) {
+                    processedVibeImages.push(params.preEncodedVibes[i]!)
+                    newlyEncodedVibes.push(null)  // Already had encoding
+                    continue
+                }
                 try {
                     const encoded = await encodeVibeImage(token, params.vibeImages[i], params.vibeInfo?.[i] || 1.0)
                     processedVibeImages.push(encoded)
+                    newlyEncodedVibes.push(encoded)  // Newly encoded - can be cached
                 } catch (e) {
                     console.error('Vibe encoding error:', e)
                     // Continue or fail? Let's fail for now to be safe
@@ -673,7 +682,12 @@ export async function generateImage(
         // Convert to base64
         const base64 = await file.async('base64')
 
-        return { success: true, imageData: base64 }
+        return {
+            success: true,
+            imageData: base64,
+            // Return newly encoded vibes so they can be cached in character-store
+            encodedVibes: newlyEncodedVibes.filter((v): v is string => v !== null)
+        }
     } catch (error) {
         console.error('Generation error:', error)
         return { success: false, error: `생성 오류: ${error}` }
@@ -762,7 +776,7 @@ export async function generateImageStream(
     token: string,
     params: GenerationParams,
     onProgress?: (progress: number, partialImage?: string) => void
-): Promise<{ success: boolean; imageData?: string; error?: string }> {
+): Promise<{ success: boolean; imageData?: string; error?: string; encodedVibes?: string[] }> {
     if (!token) {
         return { success: false, error: 'API 토큰이 필요합니다' }
     }
@@ -777,11 +791,19 @@ export async function generateImageStream(
 
         // Process Vibe Images
         const processedVibeImages: string[] = []
+        const newlyEncodedVibes: (string | null)[] = []  // Track which vibes were newly encoded
         if (params.vibeImages && params.vibeImages.length > 0) {
             for (let i = 0; i < params.vibeImages.length; i++) {
+                // Use pre-encoded vibe if available (saves API call)
+                if (params.preEncodedVibes?.[i]) {
+                    processedVibeImages.push(params.preEncodedVibes[i]!)
+                    newlyEncodedVibes.push(null)  // Already had encoding
+                    continue
+                }
                 try {
                     const encoded = await encodeVibeImage(token, params.vibeImages[i], params.vibeInfo?.[i] || 1.0)
                     processedVibeImages.push(encoded)
+                    newlyEncodedVibes.push(encoded)  // Newly encoded - can be cached
                 } catch (e) {
                     console.error('Vibe encoding error (Stream):', e)
                     return { success: false, error: `Vibe Processing Failed: ${e}` }
@@ -1051,7 +1073,7 @@ export async function generateImageStream(
                     // Read 4-byte length header (big-endian)
                     const length = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]
 
-                    if (length <= 0 || length > 10_000_000) {
+                    if (length <= 0 || length > 50_000_000) {
                         console.error('[Stream] Invalid message length:', length)
                         break
                     }
@@ -1123,7 +1145,11 @@ export async function generateImageStream(
         }
 
         if (finalImageData) {
-            return { success: true, imageData: finalImageData }
+            return {
+                success: true,
+                imageData: finalImageData,
+                encodedVibes: newlyEncodedVibes.filter((v): v is string => v !== null)
+            }
         }
 
         return { success: false, error: '스트림에서 이미지 데이터를 찾을 수 없음' }

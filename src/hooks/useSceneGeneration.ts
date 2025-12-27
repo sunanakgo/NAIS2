@@ -284,8 +284,11 @@ export function useSceneGeneration() {
                 // CRITICAL: Release processing lock BEFORE checking for next item
                 isProcessing = false
 
-                // Small delay to prevent rapid consecutive API calls (extra safety)
-                await new Promise(resolve => setTimeout(resolve, 100))
+                // Apply configurable generation delay between scenes
+                const { generationDelay } = useSettingsStore.getState()
+                if (generationDelay > 0) {
+                    await new Promise(resolve => setTimeout(resolve, generationDelay))
+                }
 
                 // Continue Queue - only if still generating
                 if (useSceneStore.getState().isGenerating) {

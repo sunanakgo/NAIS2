@@ -17,6 +17,7 @@ import {
     Settings,
     Coins,
     Wand2,
+    Zap,
 } from 'lucide-react'
 
 interface ThreeColumnLayoutProps {
@@ -41,10 +42,14 @@ export function ThreeColumnLayout({ children }: ThreeColumnLayoutProps) {
     const { presets, activePresetId } = usePresetStore()
     const activePreset = presets.find(p => p.id === activePresetId)
 
-    // Only calculate extra costs (Char/Vibe) per user request
+    // Calculate cached vs uncached vibes
+    const uncachedVibeCount = vibeImages.filter(v => !v.encodedVibe).length
+    const cachedVibeCount = vibeImages.length - uncachedVibeCount
+
+    // Only calculate extra costs for uncached vibes
     const cost = calculateExtraCost(
         characterImages.length,
-        vibeImages.length
+        uncachedVibeCount
     )
 
     // Refresh Anlas on mount if verified
@@ -99,10 +104,18 @@ export function ThreeColumnLayout({ children }: ThreeColumnLayoutProps) {
                                         {formatAnlas(anlas.total)}
                                     </span>
                                 </div>
-                                {cost > 0 && (
-                                    <span className="text-sm font-medium text-destructive animate-in fade-in slide-in-from-left-2">
-                                        -{cost}
-                                    </span>
+                                {(cost > 0 || cachedVibeCount > 0) && (
+                                    <div className={cn(
+                                        "flex items-center gap-1 px-2 py-1 rounded-md border text-xs font-bold animate-in fade-in slide-in-from-left-2 shadow-sm",
+                                        cost > 0
+                                            ? "bg-destructive/10 border-destructive/30 text-destructive"
+                                            : "bg-blue-500/10 border-blue-500/30 text-blue-500"
+                                    )}>
+                                        {cost > 0 && <span>-{cost}</span>}
+                                        {cachedVibeCount > 0 && (
+                                            <Zap className={cn("h-3 w-3", cost === 0 && "ml-0.5")} fill="currentColor" />
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         ) : (

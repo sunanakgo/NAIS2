@@ -102,6 +102,9 @@ export interface NAIMetadata {
         informationExtracted: number
     }>
 
+    // Pre-encoded vibe data (for reuse without re-encoding)
+    encodedVibes?: string[]
+
     // Character Reference details
     characterReferenceInfo?: Array<{
         strength: number
@@ -448,6 +451,7 @@ function convertNAIFormat(data: Record<string, unknown>): NAIMetadata {
     // Reference images - Vibe Transfer
     if (data.reference_image_multiple && Array.isArray(data.reference_image_multiple) && data.reference_image_multiple.length > 0) {
         metadata.hasVibeTransfer = true
+        metadata.encodedVibes = data.reference_image_multiple as string[]
     }
     if (data.reference_strength_multiple && Array.isArray(data.reference_strength_multiple) && data.reference_strength_multiple.length > 0) {
         metadata.hasVibeTransfer = true

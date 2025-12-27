@@ -9,11 +9,12 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Users, Upload, X } from 'lucide-react'
+import { Users, Upload, X, Zap, Database } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
 import { useCharacterStore, ReferenceImage } from '@/stores/character-store'
+import { parseMetadataFromBase64 } from '@/lib/metadata-parser'
 
 
 const SafeSlider = ({
@@ -71,7 +72,24 @@ export function CharacterSettingsDialog() {
             if (mode === 'character') {
                 addCharacterImage(base64)
             } else {
-                addVibeImage(base64)
+                // Try to extract pre-encoded vibe from PNG metadata
+                try {
+                    const metadata = await parseMetadataFromBase64(base64)
+                    if (metadata?.encodedVibes && metadata.encodedVibes.length > 0) {
+                        // Use first encoded vibe and info/strength from metadata
+                        const info = metadata.vibeTransferInfo?.[0]
+                        addVibeImage(
+                            base64,
+                            metadata.encodedVibes[0],
+                            info?.informationExtracted ?? 1.0,
+                            info?.strength ?? 0.6
+                        )
+                    } else {
+                        addVibeImage(base64)
+                    }
+                } catch {
+                    addVibeImage(base64)
+                }
             }
         }
         // Reset input
@@ -107,16 +125,29 @@ export function CharacterSettingsDialog() {
             )}
             {images.map(img => (
                 <div key={img.id} className="flex gap-4 p-3 border rounded-lg bg-card bg-muted/10">
-                    <div className="relative shrink-0 w-24 h-24 bg-black rounded-md overflow-hidden border">
-                        <img src={img.base64} alt="Reference" className="w-full h-full object-cover" />
+                    <div className="relative shrink-0 w-24 h-24 bg-muted rounded-md overflow-hidden border flex items-center justify-center group/image">
+                        {img.base64 ? (
+                            <img src={img.base64} alt="Reference" className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="flex flex-col items-center justify-center text-muted-foreground p-2 text-center">
+                                <Database className="w-8 h-8 opacity-50 mb-1" />
+                                <span className="text-[9px] leading-tight whitespace-pre-line">{t('characterDialog.encodedDataOnly')}</span>
+                            </div>
+                        )}
                         <Button
                             variant="destructive"
                             size="icon"
-                            className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-80 hover:opacity-100"
+                            className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-0 group-hover/image:opacity-100 transition-opacity"
                             onClick={() => onRemove(img.id)}
                         >
                             <X className="w-3 h-3" />
                         </Button>
+                        {/* Pre-encoded indicator */}
+                        {img.encodedVibe && (
+                            <div className="absolute bottom-1 left-1 bg-green-500/90 text-white text-[9px] font-bold rounded px-1 py-0.5 flex items-center gap-0.5" title={t('characterDialog.preEncodedTooltip')}>
+                                <Zap className="w-2.5 h-2.5" />
+                            </div>
+                        )}
                     </div>
                     <div className="flex-1 space-y-3 min-w-0">
                         <div className="space-y-1">

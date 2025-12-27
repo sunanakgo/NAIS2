@@ -26,6 +26,7 @@ import { useGenerationStore } from '@/stores/generation-store'
 import { useCharacterPromptStore } from '@/stores/character-prompt-store'
 import { toast } from '@/components/ui/use-toast'
 import { FileImage, Download, AlertCircle } from 'lucide-react'
+import { useCharacterStore } from '@/stores/character-store'
 
 interface MetadataDialogProps {
     open: boolean
@@ -39,6 +40,7 @@ interface LoadOptions {
     resolution: boolean
     seed: boolean
     characterPrompts: boolean
+    vibeTransfer: boolean
 }
 
 export function MetadataDialog({ open, onOpenChange, initialImage }: MetadataDialogProps) {
@@ -46,6 +48,7 @@ export function MetadataDialog({ open, onOpenChange, initialImage }: MetadataDia
     const { presets, activePresetId, loadPreset, syncFromGenerationStore } = usePresetStore()
     const genStore = useGenerationStore()
     const charStore = useCharacterPromptStore()
+    const { addVibeImage } = useCharacterStore()
 
     const [metadata, setMetadata] = useState<NAIMetadata | null>(null)
     const [imageDataUrl, setImageDataUrl] = useState<string | null>(null)
@@ -57,6 +60,7 @@ export function MetadataDialog({ open, onOpenChange, initialImage }: MetadataDia
         resolution: true,
         seed: true,
         characterPrompts: true,
+        vibeTransfer: true,
     })
     const [isDragOver, setIsDragOver] = useState(false)
 
@@ -209,6 +213,21 @@ export function MetadataDialog({ open, onOpenChange, initialImage }: MetadataDia
             })
         }
 
+        if (loadOptions.vibeTransfer && metadata.encodedVibes && metadata.encodedVibes.length > 0) {
+            // Import Vibe Transfers (Encoded only)
+            const infos = metadata.vibeTransferInfo || []
+            metadata.encodedVibes.forEach((encoded, index) => {
+                // We don't have the original image, so we pass empty string for base64
+                // The CharacterList component will handle displaying a placeholder
+                addVibeImage(
+                    '',
+                    encoded,
+                    infos[index]?.informationExtracted ?? 1.0,
+                    infos[index]?.strength ?? 0.6
+                )
+            })
+        }
+
         // Save to preset
         syncFromGenerationStore()
 
@@ -234,6 +253,7 @@ export function MetadataDialog({ open, onOpenChange, initialImage }: MetadataDia
             resolution: newValue,
             seed: newValue,
             characterPrompts: newValue,
+            vibeTransfer: newValue,
         })
     }
 
@@ -444,12 +464,30 @@ export function MetadataDialog({ open, onOpenChange, initialImage }: MetadataDia
                                         </div>
                                     )}
 
-                                    {/* Warnings */}
-                                    {(metadata.hasVibeTransfer || metadata.hasCharacterReference) && (
+                                    {/* Warnings / Vibe Transfer Info */}
+                                    {metadata.hasVibeTransfer && (
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <Checkbox
+                                                    id="opt-vibe"
+                                                    checked={loadOptions.vibeTransfer}
+                                                    onCheckedChange={() => toggleOption('vibeTransfer')}
+                                                />
+                                                <Label htmlFor="opt-vibe" className="text-sm font-medium cursor-pointer">
+                                                    {t('metadata.optVibeVersion', '바이브 트랜스퍼 (데이터만 포함)')}
+                                                </Label>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground pl-6">
+                                                {t('metadata.vibeDesc', '원본 이미지는 없지만, 인코딩된 바이브 데이터를 복원합니다.')}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {metadata.hasCharacterReference && (
                                         <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
                                             <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
                                             <p className="text-xs text-amber-600 dark:text-amber-400">
-                                                {t('metadata.refWarning', '이미지 레퍼런스(Vibe/Character)는 메타데이터에서 불러올 수 없습니다.')}
+                                                {t('metadata.charRefWarning', 'Character Reference detected. Extraction supported via Director Tools.')}
                                             </p>
                                         </div>
                                     )}

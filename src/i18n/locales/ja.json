@@ -116,13 +116,16 @@
         "optResolution": "解像度",
         "optSeed": "シード",
         "optCharPrompts": "キャラクタープロンプト",
-        "refWarning": "画像リファレンス(Vibe/Character)はメタデータから読み込めません。",
+        "refWarning": "画像リファレンス(Vibe/Character)がメタデータから検出されました。",
         "loadAnother": "別の画像",
         "apply": "適用",
         "applied": "メタデータ適用完了",
         "appliedDesc": "選択した設定がプリセットに適用されました。",
         "loadFromImage": "メタデータを読み込む",
-        "extractDesc": "PNGファイルからプロンプトと設定を抽出します"
+        "extractDesc": "PNGファイルからプロンプトと設定を抽出します",
+        "optVibeVersion": "Vibe Transfer (データのみ)",
+        "vibeDesc": "元の画像はありませんが、エンコードされたVibeデータは復元されます。",
+        "charRefWarning": "キャラクター参照が検出されました。Director Tools経由で抽出がサポートされています。"
     },
     "nav": {
         "main": "メイン",
@@ -214,7 +217,9 @@
         "uploadCharacter": "キャラ画像アップロード",
         "uploadVibe": "Vibe画像アップロード",
         "strength": "強度",
-        "noImages": "画像がありません。"
+        "noImages": "画像がありません。",
+        "encodedDataOnly": "エンコード済み\nデータのみ",
+        "preEncodedTooltip": "事前エンコード済み (API呼び出し不要)"
     },
     "imageRef": {
         "title": "画像参照を追加",
@@ -421,6 +426,10 @@
             "title": "ストリーミング生成",
             "description": "画像生成中にリアルタイムの進行状況を表示します"
         },
+        "generationDelay": {
+            "title": "生成遅延",
+            "description": "バッチ生成時のAPI過負荷防止のための遅延"
+        },
         "version": {
             "title": "バージョン",
             "checkUpdate": "アップデートを確認"
@@ -496,6 +505,7 @@
         "apply": "プロンプトに適用",
         "apiKeyRequired": "Gemini APIキーが必要です",
         "goToSettings": "設定ページでAPIキーを入力してください",
-        "error": "エラーが発生しました"
+        "error": "エラーが発生しました",
+        "tokenUsage": "トークン消費"
     }
 }

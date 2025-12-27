@@ -131,13 +131,16 @@
         "optResolution": "Resolution",
         "optSeed": "Seed",
         "optCharPrompts": "Character Prompts",
-        "refWarning": "Image references (Vibe/Character) cannot be loaded from metadata.",
+        "refWarning": "Image references (Vibe/Character) detected in Metadata.",
         "loadAnother": "Another Image",
         "apply": "Apply",
         "applied": "Metadata Applied",
         "appliedDesc": "Selected settings have been applied to preset.",
         "loadFromImage": "Load Metadata",
-        "extractDesc": "Extract prompts and settings from PNG file"
+        "extractDesc": "Extract prompts and settings from PNG file",
+        "optVibeVersion": "Vibe Transfer (Data Only)",
+        "vibeDesc": "Original image missing; restoring encoded Vibe data.",
+        "charRefWarning": "Character Reference detected. Extraction supported via Director Tools."
     },
     "nav": {
         "main": "Main",
@@ -214,7 +217,9 @@
         "uploadCharacter": "Upload Character Images",
         "uploadVibe": "Upload Vibe Images",
         "strength": "Strength",
-        "noImages": "No images added."
+        "noImages": "No images added.",
+        "encodedDataOnly": "Encoded\nData Only",
+        "preEncodedTooltip": "Pre-encoded (no API call needed)"
     },
     "imageRef": {
         "title": "Add Image Reference",
@@ -421,6 +426,10 @@
             "title": "Streaming Generation",
             "description": "Show real-time progress during image generation"
         },
+        "generationDelay": {
+            "title": "Generation Delay",
+            "description": "Delay between batch generations to prevent API overload"
+        },
         "version": {
             "title": "Version",
             "checkUpdate": "Check for Updates"
@@ -496,6 +505,7 @@
         "apply": "Apply to Prompt",
         "apiKeyRequired": "Gemini API key is required",
         "goToSettings": "Please enter your API key in Settings",
-        "error": "Error Occurred"
+        "error": "Error Occurred",
+        "tokenUsage": "Tokens Used"
     }
 }

@@ -34,16 +34,28 @@ interface GeminiResponse {
             }>
         }
     }>
+    usageMetadata?: {
+        promptTokenCount?: number
+        candidatesTokenCount?: number
+        totalTokenCount?: number
+    }
     error?: {
         message: string
         code: number
     }
 }
 
+export interface TokenUsage {
+    promptTokens: number
+    outputTokens: number
+    totalTokens: number
+}
+
 export interface GenerateTagsResult {
     success: boolean
     tags: string[]
     rawResponse?: string
+    tokenUsage?: TokenUsage
     error?: string
 }
 
@@ -142,7 +154,12 @@ export async function generateTagsFromPrompt(
         return {
             success: true,
             tags,
-            rawResponse: text
+            rawResponse: text,
+            tokenUsage: data.usageMetadata ? {
+                promptTokens: data.usageMetadata.promptTokenCount || 0,
+                outputTokens: data.usageMetadata.candidatesTokenCount || 0,
+                totalTokens: data.usageMetadata.totalTokenCount || 0,
+            } : undefined
         }
 
     } catch (error) {

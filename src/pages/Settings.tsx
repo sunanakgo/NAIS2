@@ -30,6 +30,7 @@ import {
     Info,
     RefreshCw,
     Download,
+    Timer,
 } from 'lucide-react'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
@@ -63,7 +64,7 @@ export default function Settings() {
     const { t, i18n } = useTranslation()
     const { theme, setTheme } = useThemeStore()
     const { token, isVerified, anlas, isLoading, verifyAndSave } = useAuthStore()
-    const { savePath, autoSave, setSavePath, setAutoSave, promptFontSize, setPromptFontSize, useStreaming, setUseStreaming, geminiApiKey, setGeminiApiKey, useAbsolutePath } = useSettingsStore()
+    const { savePath, autoSave, setSavePath, setAutoSave, promptFontSize, setPromptFontSize, useStreaming, setUseStreaming, generationDelay, setGenerationDelay, geminiApiKey, setGeminiApiKey, useAbsolutePath } = useSettingsStore()
     const [localGeminiKey, setLocalGeminiKey] = useState(geminiApiKey)
 
     const [activeSection, setActiveSection] = useState<SettingsSection>('general')
@@ -203,6 +204,28 @@ export default function Settings() {
                                         checked={useStreaming}
                                         onChange={(e) => setUseStreaming(e.target.checked)}
                                     />
+                                </div>
+
+                                {/* Generation Delay */}
+                                <div className="space-y-3 pt-4 border-t border-border/30">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-medium flex items-center gap-2">
+                                            <Timer className="h-4 w-4 text-blue-500" />
+                                            {t('settingsPage.generationDelay.title', 'Generation Delay')}
+                                        </label>
+                                        <span className="text-sm text-muted-foreground">{generationDelay}ms</span>
+                                    </div>
+                                    <Slider
+                                        value={[generationDelay]}
+                                        onValueChange={([v]) => setGenerationDelay(v)}
+                                        min={0}
+                                        max={5000}
+                                        step={100}
+                                        className="w-full"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('settingsPage.generationDelay.description', 'Delay between batch image generations to avoid API rate limits.')}
+                                    </p>
                                 </div>
 
                                 {/* Version Info */}

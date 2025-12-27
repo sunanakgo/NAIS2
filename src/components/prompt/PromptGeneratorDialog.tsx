@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { useSettingsStore } from '@/stores/settings-store'
-import { generateTagsFromPrompt, GEMINI_MODELS, type GeminiModel } from '@/services/gemini-service'
+import { generateTagsFromPrompt, GEMINI_MODELS, type GeminiModel, type TokenUsage } from '@/services/gemini-service'
 import { parseAndMatchTags, type TagMatchResult } from '@/lib/tag-matcher'
 import { toast } from '@/components/ui/use-toast'
 
@@ -47,6 +47,7 @@ export function PromptGeneratorDialog({ open, onOpenChange, onApply }: PromptGen
     const [results, setResults] = useState<TagMatchResult[]>([])
     const [selectedTags, setSelectedTags] = useState<Map<number, string>>(new Map())
     const [selectedModel, setSelectedModel] = useState<GeminiModel>('gemini-2.5-flash')
+    const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null)
 
     // Reset when dialog opens
     useEffect(() => {
@@ -54,6 +55,7 @@ export function PromptGeneratorDialog({ open, onOpenChange, onApply }: PromptGen
             setUserInput('')
             setResults([])
             setSelectedTags(new Map())
+            setTokenUsage(null)
         }
     }, [open])
 
@@ -100,6 +102,11 @@ export function PromptGeneratorDialog({ open, onOpenChange, onApply }: PromptGen
                 }
             })
             setSelectedTags(initialSelections)
+
+            // Store token usage if available
+            if (result.tokenUsage) {
+                setTokenUsage(result.tokenUsage)
+            }
 
         } catch (error) {
             console.error('Generate error:', error)
@@ -239,8 +246,13 @@ export function PromptGeneratorDialog({ open, onOpenChange, onApply }: PromptGen
                     {results.length > 0 && (
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                                <h4 className="text-sm font-medium">
+                                <h4 className="text-sm font-medium flex items-center gap-2">
                                     {t('promptGenerator.results', '생성된 태그')}
+                                    {tokenUsage && (
+                                        <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                                            {t('promptGenerator.tokenUsage', '토큰')}: {tokenUsage.totalTokens}
+                                        </span>
+                                    )}
                                 </h4>
                                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                     <span className="flex items-center gap-1">

@@ -19,7 +19,8 @@ export function InpaintingDialog({ open, onOpenChange, sourceImage: propSourceIm
     const {
         setSourceImage,
         setMask,
-        resetI2IParams
+        resetI2IParams,
+        mask: existingMask
     } = useGenerationStore()
 
     const [brushSize, setBrushSize] = useState([50])
@@ -29,6 +30,7 @@ export function InpaintingDialog({ open, onOpenChange, sourceImage: propSourceIm
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
     const [isDrawing, setIsDrawing] = useState(false)
+    const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null)
 
 
     // History
@@ -42,18 +44,18 @@ export function InpaintingDialog({ open, onOpenChange, sourceImage: propSourceIm
             // Check if we're in sidebar workflow mode - if so, don't reset
             const currentI2IMode = useGenerationStore.getState().i2iMode
             if (!currentI2IMode) {
-                // Old workflow: reset params when dialog closes
                 resetI2IParams()
             }
             setHistory([])
             setHistoryStep(-1)
+            setImageSize(null)
         } else if (propSourceImage) {
             // Set source image in store
             setSourceImage(propSourceImage)
         }
     }, [open, propSourceImage, resetI2IParams, setSourceImage])
 
-    // Initial Canvas Setup (similar to MosaicDialog)
+    // Initial Canvas Setup - Now also restores existing mask
     useEffect(() => {
         if (!open || !propSourceImage) return
 
@@ -68,11 +70,21 @@ export function InpaintingDialog({ open, onOpenChange, sourceImage: propSourceIm
             img.onload = () => {
                 canvas.width = img.width
                 canvas.height = img.height
+
+                // Restore existing mask if present
+                if (existingMask) {
+                    const maskImg = new Image()
+                    maskImg.crossOrigin = 'anonymous'
+                    maskImg.onload = () => {
+                        ctx.drawImage(maskImg, 0, 0, canvas.width, canvas.height)
+                    }
+                    maskImg.src = existingMask
+                }
             }
             img.src = propSourceImage
         }, 100)
         return () => clearTimeout(timer)
-    }, [open, propSourceImage])
+    }, [open, propSourceImage, existingMask])
 
     // Grid cell size (NovelAI uses 8x8 pixel blocks)
     const GRID_SIZE = 8
@@ -335,22 +347,45 @@ export function InpaintingDialog({ open, onOpenChange, sourceImage: propSourceIm
                             className="flex-1 relative overflow-hidden rounded-lg bg-muted/50 flex items-center justify-center p-4 min-h-0"
                         >
                             {propSourceImage && (
-                                <div className="relative inline-flex" style={{ maxWidth: '100%', maxHeight: '100%' }}>
+                                <div
+                                    className="relative flex justify-center items-center"
+                                    style={{
+                                        maxWidth: '100%',
+                                        maxHeight: '100%',
+                                        aspectRatio: imageSize ? `${imageSize.width} / ${imageSize.height}` : 'auto'
+                                    }}
+                                >
                                     <img
                                         src={propSourceImage}
                                         alt="Source"
-                                        className="block max-w-full max-h-full w-auto h-auto object-contain"
-                                        style={{ maxHeight: '100%' }}
+                                        className="block w-full h-full object-contain"
                                         onLoad={(e) => {
+                                            const img = e.currentTarget
+                                            setImageSize({ width: img.naturalWidth, height: img.naturalHeight })
+
                                             if (canvasRef.current) {
-                                                canvasRef.current.width = e.currentTarget.naturalWidth
-                                                canvasRef.current.height = e.currentTarget.naturalHeight
+                                                // Set canvas internal resolution to image natural size
+                                                canvasRef.current.width = img.naturalWidth
+                                                canvasRef.current.height = img.naturalHeight
+
+                                                // Restore existing mask
+                                                if (existingMask) {
+                                                    const ctx = canvasRef.current.getContext('2d')
+                                                    if (ctx) {
+                                                        const maskImg = new Image()
+                                                        maskImg.crossOrigin = 'anonymous'
+                                                        maskImg.onload = () => {
+                                                            ctx.drawImage(maskImg, 0, 0, canvasRef.current!.width, canvasRef.current!.height)
+                                                        }
+                                                        maskImg.src = existingMask
+                                                    }
+                                                }
                                             }
                                         }}
                                     />
                                     <canvas
                                         ref={canvasRef}
-                                        className="absolute inset-0 w-full h-full touch-none cursor-crosshair opacity-50"
+                                        className="absolute top-0 left-0 w-full h-full touch-none cursor-crosshair opacity-50"
                                         onMouseDown={startDrawing}
                                         onMouseMove={draw}
                                         onMouseUp={stopDrawing}

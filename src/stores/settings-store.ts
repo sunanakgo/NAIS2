@@ -22,6 +22,7 @@ interface SettingsState {
 
     // Generation settings
     useStreaming: boolean  // Use streaming API for image generation
+    generationDelay: number  // Delay between batch generations in ms (0-5000)
 
     // Gemini API settings
     geminiApiKey: string
@@ -33,6 +34,7 @@ interface SettingsState {
     removeCustomResolution: (id: string) => void
     setPromptFontSize: (size: number) => void
     setUseStreaming: (useStreaming: boolean) => void
+    setGenerationDelay: (delay: number) => void
     setGeminiApiKey: (key: string) => void
 }
 
@@ -45,6 +47,7 @@ export const useSettingsStore = create<SettingsState>()(
             customResolutions: [],
             promptFontSize: 16, // Default text-base equivalent approximately
             useStreaming: true, // Default: enabled
+            generationDelay: 500, // Default: 500ms delay between batch generations
             geminiApiKey: '', // Default: empty
 
             setSavePath: (savePath, useAbsolute) => set({
@@ -65,6 +68,7 @@ export const useSettingsStore = create<SettingsState>()(
             })),
             setPromptFontSize: (size) => set({ promptFontSize: size }),
             setUseStreaming: (useStreaming) => set({ useStreaming }),
+            setGenerationDelay: (delay) => set({ generationDelay: Math.max(0, Math.min(5000, delay)) }),
             setGeminiApiKey: (key) => set({ geminiApiKey: key }),
         }),
         {
