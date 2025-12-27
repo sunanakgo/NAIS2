@@ -14,24 +14,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-
+          - platform: 'macos-latest'
+            args: '--target aarch64-apple-darwin'
+            target: 'aarch64-apple-darwin'
+            tagger_target: 'aarch64-apple-darwin'
+          - platform: 'macos-latest'
+            args: '--target x86_64-apple-darwin'
+            target: 'x86_64-apple-darwin'
+            tagger_target: 'x86_64-apple-darwin'
           - platform: 'windows-latest'
             args: ''
             target: ''
             tagger_target: 'x86_64-pc-windows-msvc'
-            python_arch: 'x64'
-
-          - platform: 'macos-14'
-            args: '--target x86_64-apple-darwin'
-            target: 'x86_64-apple-darwin'
-            tagger_target: 'x86_64-apple-darwin'
-            python_arch: 'x64'
-
-          - platform: 'macos-14'
-            args: '--target aarch64-apple-darwin'
-            target: 'aarch64-apple-darwin'
-            tagger_target: 'aarch64-apple-darwin'
-            python_arch: 'arm64'
 
     runs-on: ${{ matrix.platform }}
     
@@ -45,28 +39,17 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Setup gettext library for Intel Python on Apple Silicon
-        if: matrix.platform == 'macos-14' && matrix.python_arch == 'x64'
-        run: |
-          brew install gettext || true
-          sudo mkdir -p /usr/local/opt/gettext/lib
-          sudo cp /opt/homebrew/opt/gettext/lib/libintl.8.dylib /usr/local/opt/gettext/lib/libintl.8.dylib
-
-
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
-          architecture: ${{ matrix.python_arch }}
+          python-version: '3.11'
 
-      - name: Install dependencies
-        working-directory: src-tauri/python
+      - name: Install Python dependencies
         run: |
           pip install pyinstaller fastapi uvicorn pillow numpy onnxruntime pandas huggingface_hub rembg tqdm python-multipart
 
       - name: Build Tagger Server (Windows)
-        if: runner.os == 'Windows'
+        if: matrix.platform == 'windows-latest'
         working-directory: src-tauri/python
         run: |
           pyinstaller tagger_server.spec --clean --noconfirm
@@ -74,7 +57,7 @@ jobs:
           mv dist/tagger-server-x86_64-pc-windows-msvc.exe ../binaries/
 
       - name: Build Tagger Server (macOS)
-        if: runner.os == 'macOS'
+        if: matrix.platform == 'macos-latest'
         working-directory: src-tauri/python
         run: |
           pyinstaller --onefile --name "tagger-server-${{ matrix.tagger_target }}" tagger_server.py --clean --noconfirm
