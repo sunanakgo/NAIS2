@@ -27,7 +27,7 @@ export function AnimatedNavBar({ items }: AnimatedNavBarProps) {
                         key={item.path}
                         to={item.path}
                         className={cn(
-                            "relative px-2 lg:px-4 py-2 rounded-full text-sm font-medium transition-colors z-0",
+                            "relative px-4 py-2 rounded-full text-sm font-medium transition-colors z-0",
                             isActive
                                 ? "text-foreground"
                                 : "text-muted-foreground hover:text-foreground/80"
@@ -40,9 +40,9 @@ export function AnimatedNavBar({ items }: AnimatedNavBarProps) {
                                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                             />
                         )}
-                        <span className="flex items-center gap-1 lg:gap-2 relative z-10 whitespace-nowrap">
+                        <span className="flex items-center gap-2 relative z-10">
                             <item.icon className="h-4 w-4" />
-                            <span className="hidden lg:inline">{t(item.labelKey)}</span>
+                            <span>{t(item.labelKey)}</span>
                         </span>
                     </NavLink>
                 )
