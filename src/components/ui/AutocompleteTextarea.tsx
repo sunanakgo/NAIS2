@@ -212,6 +212,9 @@ export function AutocompleteTextarea({
         const val = value
         const pos = el.selectionEnd || 0
 
+        // Focus ensures execCommand works on the correct element
+        el.focus()
+
         if (suggestionMode === 'wildcard') {
             // 와일드카드 삽입: <name> 형태로
             const wildcardWord = getWildcardWord(val, pos)
@@ -222,21 +225,14 @@ export function AutocompleteTextarea({
             const bracketPos = left.lastIndexOf('<')
             if (bracketPos === -1) return
 
-            const before = val.slice(0, bracketPos)
-            const after = val.slice(pos)
+            // 대체할 범위 선택: < 부터 현재 커서 위치까지
+            el.setSelectionRange(bracketPos, pos)
 
             // <name> 형태로 삽입 (닫는 괄호 포함)
-            const newValue = before + '<' + suggestion.value + '>' + after
+            const textToInsert = `<${suggestion.value}>`
+            document.execCommand('insertText', false, textToInsert)
 
-            onChange({ target: { value: newValue } })
             setIsVisible(false)
-
-            // 커서 위치 설정 (삽입된 와일드카드 뒤)
-            setTimeout(() => {
-                const newPos = bracketPos + suggestion.value.length + 2 // <name>
-                el.setSelectionRange(newPos, newPos)
-                el.focus()
-            }, 0)
         } else {
             // 일반 태그 삽입
             const left = val.slice(0, pos)
@@ -245,22 +241,18 @@ export function AutocompleteTextarea({
 
             const wordStart = wordMatch.index!
             const before = val.slice(0, wordStart)
-            const after = val.slice(pos)
-            // Add space if needed
+
+            // Add space if needed (prefix)
             const prefix = (before.length > 0 && !before.endsWith(' ') && !before.endsWith('\n')) ? ' ' : ''
+            const textToInsert = `${prefix}${suggestion.value}, `
 
-            const newValue = before + prefix + suggestion.value + ', ' + after
+            // 대체할 범위 선택: 단어 시작부터 현재 커서까지
+            el.setSelectionRange(wordStart, pos)
 
-            onChange({ target: { value: newValue } })
+            document.execCommand('insertText', false, textToInsert)
+
             setIsVisible(false)
-
-            // Reset focus and cursor
-            setTimeout(() => {
-                el.focus()
-                const newPos = wordStart + prefix.length + suggestion.value.length + 2 // +2 for ', '
-                el.setSelectionRange(newPos, newPos)
-                scrollToCaret()
-            }, 0)
+            scrollToCaret()
         }
     }
 
