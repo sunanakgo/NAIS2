@@ -72,7 +72,7 @@ export function AutocompleteTextarea({
     const textareaRef = useRef<HTMLTextAreaElement | null>(null)
     const containerRef = useRef<HTMLDivElement>(null) // The scrolling container
     const listRef = useRef<HTMLDivElement>(null)
-    
+
     // onChange 디바운스를 위한 타이머 ref
     const onChangeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -112,19 +112,19 @@ export function AutocompleteTextarea({
     const checkAutocomplete = useCallback((val: string, el: HTMLTextAreaElement) => {
 
         const pos = el.selectionEnd || val.length
-        
+
         // 1. 조각 모드 체크 (`<` 이후)
         const wildcardWord = getWildcardWord(val, pos)
         if (wildcardWord !== null) {
             // 조각 프롬프트 자동완성 (즉시, 디바운스 없음)
             const lower = wildcardWord.toLowerCase()
             const matches: SuggestionItem[] = []
-            
+
             for (const file of wildcardFiles) {
                 if (matches.length >= maxSuggestions) break
                 const fullPath = file.folder ? `${file.folder}/${file.name}` : file.name
                 const fullPathLower = fullPath.toLowerCase()
-                
+
                 // 빈 문자열이면 모든 파일 표시, 아니면 필터링
                 if (wildcardWord === '' || fullPathLower.includes(lower)) {
                     matches.push({
@@ -135,7 +135,7 @@ export function AutocompleteTextarea({
                     })
                 }
             }
-            
+
             if (matches.length > 0) {
                 setSuggestions(matches)
                 setSuggestionMode('wildcard')
@@ -154,7 +154,7 @@ export function AutocompleteTextarea({
             }
             return
         }
-        
+
         // 2. 일반 태그 자동완성
         const word = getCurrentWord(val, pos)
         if (word.length < 2) {
@@ -165,11 +165,11 @@ export function AutocompleteTextarea({
         // 즉시 검색 (디바운스 없음 - 빠른 반응성)
         const lower = word.toLowerCase()
         const firstChar = lower[0] || ''
-        
+
         // 인덱스 기반 검색 (해당 첫 글자 태그만 검색)
         const indexedTags = TAG_INDEX[firstChar] || []
         const matches: SuggestionItem[] = []
-        
+
         // 1단계: 인덱스된 태그에서 startsWith 매칭
         for (const tag of indexedTags) {
             if (matches.length >= maxSuggestions) break
@@ -177,7 +177,7 @@ export function AutocompleteTextarea({
                 matches.push(tag)
             }
         }
-        
+
         // 2단계: 부족하면 전체에서 includes 검색 (느리지만 fallback)
         if (matches.length < maxSuggestions) {
             for (const tag of TAGS_WITH_LOWER) {
@@ -216,15 +216,15 @@ export function AutocompleteTextarea({
             // 와일드카드 삽입: <name> 형태로
             const wildcardWord = getWildcardWord(val, pos)
             if (wildcardWord === null) return
-            
+
             // `<` 위치 찾기
             const left = val.slice(0, pos)
             const bracketPos = left.lastIndexOf('<')
             if (bracketPos === -1) return
-            
+
             const before = val.slice(0, bracketPos)
             const after = val.slice(pos)
-            
+
             // <name> 형태로 삽입 (닫는 괄호 포함)
             const newValue = before + '<' + suggestion.value + '>' + after
 
@@ -293,15 +293,26 @@ export function AutocompleteTextarea({
     // --- Event Handlers ---
     const handleValueChange = (code: string) => {
         // 내부 state 즉시 업데이트 (UI 반응성)
+        const isTyping = code.length > internalValue.length
         setInternalValue(code)
-        
-        // onChange를 100ms 디바운스 (Zustand 업데이트 지연으로 렉 방지)
+
+        // Smart Debounce: 즉시 저장할 구분자 체크 (공백, 엔터, 구두점)
+        const lastChar = code.slice(-1)
+        const isDelimiter = /[\s.,;!?]/.test(lastChar)
+
         if (onChangeTimerRef.current) {
             clearTimeout(onChangeTimerRef.current)
         }
-        onChangeTimerRef.current = setTimeout(() => {
+
+        // 타이핑 중이고 구분자를 입력했다면 즉시 저장 (자연스러운 Undo 포인트 생성)
+        if (isTyping && isDelimiter) {
             onChange({ target: { value: code } })
-        }, 100)
+        } else {
+            // 일반 입력은 짧은 대기 시간으로 반응성 향상 (100ms -> 50ms)
+            onChangeTimerRef.current = setTimeout(() => {
+                onChange({ target: { value: code } })
+            }, 50)
+        }
 
         if (textareaRef.current) {
             checkAutocomplete(code, textareaRef.current)
@@ -514,10 +525,10 @@ export function AutocompleteTextarea({
                                         <span className={cn(
                                             "uppercase tracking-wider font-bold",
                                             item.type === 'fragment' ? "text-green-300" :
-                                            item.type === 'artist' ? "text-yellow-300" :
-                                                item.type === 'character' ? "text-green-300" :
-                                                    item.type === 'copyright' ? "text-fuchsia-300" :
-                                                        "text-blue-300"
+                                                item.type === 'artist' ? "text-yellow-300" :
+                                                    item.type === 'character' ? "text-green-300" :
+                                                        item.type === 'copyright' ? "text-fuchsia-300" :
+                                                            "text-blue-300"
                                         )}>
                                             {item.type}
                                         </span>
