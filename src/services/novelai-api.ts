@@ -23,9 +23,10 @@ const DEFAULT_HEADERS = {
 
 const API_ENDPOINTS = {
     // Primary API
-    USER_DATA: 'https://api.novelai.net/user/data',
-    USER_INFO: 'https://api.novelai.net/user/information',
-    SUBSCRIPTION: 'https://api.novelai.net/user/subscription',
+    // 2026-06 NAI 엔드포인트 이전: user 계열이 api.novelai.net에서 image.novelai.net으로 이동함
+    USER_DATA: 'https://image.novelai.net/user/data',
+    USER_INFO: 'https://image.novelai.net/user/information',
+    SUBSCRIPTION: 'https://image.novelai.net/user/subscription',
 
     // Image Generation API (separate from primary)
     IMAGE_GENERATE: 'https://image.novelai.net/ai/generate-image',
