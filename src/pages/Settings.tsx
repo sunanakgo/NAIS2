@@ -344,6 +344,23 @@ export default function Settings() {
             {/* Content */}
             <main className="flex-1 p-6 overflow-y-auto">
                 <div className="max-w-2xl space-y-8">
+                    {/* NAIS3 이전 안내 배너 — 항상 표시 */}
+                    <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+                        <Sparkles className="h-5 w-5 shrink-0 text-amber-400" />
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium">NAIS3가 나왔습니다</p>
+                            <p className="text-xs text-muted-foreground">
+                                백업 내보내기 → NAIS3 설정에서 불러오면 데이터가 그대로 이전됩니다
+                            </p>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={handleExportBackup} disabled={isExporting}>
+                            백업 내보내기
+                        </Button>
+                        <Button size="sm" onClick={() => openUrl('https://github.com/sunanakgo/NAIS3/releases')}>
+                            NAIS3 받기
+                        </Button>
+                    </div>
+
                     {/* General Section */}
                     {activeSection === 'general' && (
                         <section className="space-y-6">

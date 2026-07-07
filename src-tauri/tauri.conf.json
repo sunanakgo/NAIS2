@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "NAIS2",
-  "version": "2.7.3",
+  "version": "2.7.4",
   "identifier": "com.sunakgo.nais2",
   "build": {
     "frontendDist": "../dist",

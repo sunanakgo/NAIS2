@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ThreeColumnLayout } from '@/components/layout/ThreeColumnLayout'
 import { Toaster } from '@/components/ui/toaster'
+import { Nais3MigrationDialog } from '@/components/Nais3MigrationDialog'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useSceneGeneration } from '@/hooks/useSceneGeneration'
 import { useUpdateChecker } from '@/hooks/useUpdateChecker'
@@ -70,6 +71,7 @@ function App() {
             <BrowserRouter>
                 <AppContent />
                 <Toaster />
+                <Nais3MigrationDialog />
             </BrowserRouter>
         </TooltipProvider>
     )
